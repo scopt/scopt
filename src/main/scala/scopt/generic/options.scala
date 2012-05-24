@@ -156,9 +156,9 @@ private[scopt] class FlagOptionDefinition[C](
         shortopt: Option[String],
         longopt: String,
         description: String,
-        action: => C
+        action: C => C
         ) extends OptionDefinition[C](true, shortopt, longopt, null, null,
-          description, { (a: String, c: C) => action }, false, false, 0, UNBOUNDED)
+          description, { (a: String, c: C) => action(c) }, false, false, 0, UNBOUNDED)
 
 private[scopt] trait GenericOptionParser[C] {
   def options: Seq[OptionDefinition[C]]

@@ -171,10 +171,10 @@ abstract case class OptionParser[C](
     new KeyBooleanValueArgOptionDefinition(shortopt, longopt, keyName, valueName, description, action)
   
   def help(shortopt: String, longopt: String, description: String) =
-    new FlagOptionDefinition(Some(shortopt), longopt, description, {this.showUsage; exit})
+    new FlagOptionDefinition[C](Some(shortopt), longopt, description, {_ => this.showUsage; exit})
 
   def help(shortopt: Option[String], longopt: String, description: String) =
-    new FlagOptionDefinition(shortopt, longopt, description, {this.showUsage; exit})
+    new FlagOptionDefinition[C](shortopt, longopt, description, {_ => this.showUsage; exit})
   
   def separator(description: String) =
     new SeparatorDefinition(description)

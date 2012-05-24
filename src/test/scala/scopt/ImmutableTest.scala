@@ -16,7 +16,8 @@ case class Config(out: String = "",
   maxlibname: String = null,
   maxcount: Int = -1,
   whatnot: String = null,
-  files: List[String] = Nil)
+  files: List[String] = Nil,
+  verbose: Boolean = false)
 
 @RunWith(classOf[JUnitRunner])
 class ImmutableTest extends FunSuite {
@@ -28,7 +29,8 @@ class ImmutableTest extends FunSuite {
       { (key: String, value: String, c: Config) => c.copy(libname = key, libfile = value) },
     keyIntValueOpt(None, "max", "<libname>", "<max>", "maximum count for <libname>")
       { (key: String, value: Int, c: Config) => c.copy(maxlibname = key, maxcount = value) },
-    booleanOpt("xyz", "xyz is a boolean property") { (v: Boolean, c: Config) => c.copy(xyz = v) }
+    booleanOpt("xyz", "xyz is a boolean property") { (v: Boolean, c: Config) => c.copy(xyz = v) },
+    flag("v", "verbose", "verbose is a flag") { _.copy(verbose = true) }
   )}
 
   test("valid arguments are parsed correctly") {
@@ -38,6 +40,7 @@ class ImmutableTest extends FunSuite {
     validArguments(parser1, Config(libname = "key", libfile = "value", whatnot = "drink"), "--lib:key=value", "drink")
     validArguments(parser1, Config(maxlibname = "key", maxcount = 5, whatnot = "drink"), "--max:key=5", "drink")
     validArguments(parser1, Config(xyz = true, whatnot = "drink"), "--xyz", "true", "drink")
+    validArguments(parser1, Config(verbose = true, whatnot = "drink"), "--verbose", "drink")
   }
 
   test("invalid arguments fail") {

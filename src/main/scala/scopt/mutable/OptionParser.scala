@@ -105,7 +105,7 @@ case class OptionParser(
    * @param action callback function
    */      
   def opt(shortopt: String, longopt: String, description: String, action: => Unit) =
-    add(new FlagOptionDefinition(Some(shortopt), longopt, description, action))
+    add(new FlagOptionDefinition(Some(shortopt), longopt, description, _ => action))
 
   /** adds a flag option invoked by `--longopt`.
    * @param longopt long option
@@ -113,7 +113,7 @@ case class OptionParser(
    * @param action callback function
    */
   def opt(longopt: String, description: String, action: => Unit) =
-    add(new FlagOptionDefinition(None, longopt, description, action))
+    add(new FlagOptionDefinition(None, longopt, description, _ => action))
       
   // we have to give these typed options separate names, because of &^@$! type erasure
   def intOpt(shortopt: String, longopt: String, description: String, action: Int => Unit) =
@@ -243,10 +243,10 @@ case class OptionParser(
       { (k: String, v: Boolean, _) => action(k, v) }))
   
   def help(shortopt: String, longopt: String, description: String) =
-    add(new FlagOptionDefinition(Some(shortopt), longopt, description, {this.showUsage; exit}))
+    add(new FlagOptionDefinition(Some(shortopt), longopt, description, {_ => this.showUsage; exit}))
 
   def help(shortopt: Option[String], longopt: String, description: String) =
-    add(new FlagOptionDefinition(shortopt, longopt, description, {this.showUsage; exit}))
+    add(new FlagOptionDefinition(shortopt, longopt, description, {_ => this.showUsage; exit}))
   
   def separator(description: String) =
     add(new SeparatorDefinition(description))
