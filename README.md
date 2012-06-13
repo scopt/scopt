@@ -11,7 +11,7 @@ which is available [as a gist](http://gist.github.com/246481) or [here](http://h
 Sonatype
 --------
 
-    libraryDependencies += "com.github.scopt" %% "scopt" % "2.0.0"
+    libraryDependencies += "com.github.scopt" %% "scopt" % "2.0.1"
 
 Usage
 -----
