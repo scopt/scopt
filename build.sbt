@@ -10,9 +10,9 @@ licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-lic
 
 description := """a command line options parsing library"""
 
-scalaVersion := "2.10.0-RC1"
+scalaVersion := "2.10.0-RC2"
 
-crossScalaVersions := Seq("2.10.0-RC1", "2.9.2", "2.9.1", "2.9.0-1", "2.8.1", "2.8.2")
+crossScalaVersions := Seq("2.10.0-RC2", "2.9.2", "2.9.1", "2.9.0-1", "2.8.1", "2.8.2")
 
 crossVersion <<= scalaVersion { sv =>
   ("-(M|RC)".r findFirstIn sv) map {_ => CrossVersion.full} getOrElse CrossVersion.binary
