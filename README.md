@@ -57,18 +57,21 @@ parser.parse(args, Config()) map { config =>
 
 The above generates the following usage text:
 
-    Usage: scopt [options] <filename>
-    
+    scopt 2.x
+    Usage: scopt [options] <file>
+
       -f <value> | --foo <value>
             foo is an integer property
-      -o <file> | --output <file>
-            output is a string property
+      -o <value> | --output <value>
+            output
       --xyz <value>
             xyz is a boolean property
       -l:<libname>=<filename> | --lib:<libname>=<filename>
             load library <libname>
-      <singlefile>
-            <singlefile> is an argument
+      --max:<libname>=<max>
+            maximum count for <libname>
+      <file>
+            some argument
 
 ### Mutable Parser
 
