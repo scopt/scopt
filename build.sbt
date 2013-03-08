@@ -10,9 +10,9 @@ licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-lic
 
 description := """a command line options parsing library"""
 
-scalaVersion := "2.10.0-RC5"
+scalaVersion := "2.10.0"
 
-crossScalaVersions := Seq("2.10.0-RC5", "2.9.2", "2.9.1", "2.9.0-1", "2.8.1", "2.8.2")
+crossScalaVersions := Seq("2.10.0", "2.9.2", "2.9.1", "2.9.0-1", "2.8.1", "2.8.2")
 
 crossVersion <<= scalaVersion { sv =>
   ("-(M|RC)".r findFirstIn sv) map {_ => CrossVersion.full} getOrElse CrossVersion.binary
@@ -24,11 +24,11 @@ libraryDependencies += "junit" % "junit" % "4.7" % "test"
 // scalatest
 libraryDependencies <<= (scalaVersion, libraryDependencies) { (sv, deps) =>
 	val versionMap = Map("2.8.1" -> "1.8", "2.8.2" -> "1.8", "2.9.0-1" -> "1.8", "2.9.1" -> "1.8", "2.9.2" -> "1.8",
-    "2.10.0-RC5" -> "1.8")
+    "2.10.0" -> "1.9.1")
 	val libName =
 	  if (sv startsWith "2.8") "scalatest_2.8.1" 
 	  else if (sv startsWith "2.9") "scalatest_2.9.0"
-    else "scalatest_2.10.0-RC2"
+      else "scalatest_2.10"
 	val testVersion = versionMap.getOrElse(sv, error("Unsupported Scala version " + sv))
 	deps :+ ("org.scalatest" % libName % testVersion % "test")
 }
