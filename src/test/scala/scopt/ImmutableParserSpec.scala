@@ -371,7 +371,7 @@ Usage: scopt [update] [options] [<file>...]
         optional unbounded args
 some notes.
 
-Command: update [options] 
+Command: update [options]
 update is a command.
   --xyz <value>
         xyz is a boolean property"""

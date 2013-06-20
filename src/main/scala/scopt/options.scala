@@ -215,17 +215,17 @@ abstract case class OptionParser[C](programName: String) {
       (commands find {_.id == x} map {commandName} getOrElse {""}) + " "
     } getOrElse {""}) + cmd.name
   private[scopt] def commandExample(cmd: Option[OptionDef[_, C]]): String = {
-    val name = cmd map {commandName} getOrElse programName
+    val text = new ListBuffer[String]()
+    text += cmd map {commandName} getOrElse programName
     val parentId = cmd map {_.id}
     val cs = commands filter {_.getParentId == parentId}
-    val commandText = if (cs.isEmpty) "" else cs map {_.name} mkString("[", "|", "] ")
+    if (cs.nonEmpty) text += cs map {_.name} mkString("[", "|", "]")
     val os = options.toSeq filter { case x => x.kind == Opt && x.getParentId == parentId }
     val as = arguments filter {_.getParentId == parentId}
-    val optionText = if (os.isEmpty) "" else "[options] "
-    val argumentList = 
-      if (cs exists { case x => arguments exists {_.getParentId == Some(x.id)}}) "<args>..."
-      else as map {_.argName} mkString(" ")
-    (if (name == "") "" else name + " ") + commandText + optionText + argumentList
+    if (os.nonEmpty) text += "[options]"
+    if (cs exists { case x => arguments exists {_.getParentId == Some(x.id)}}) text += "<args>..."
+    else if (as.nonEmpty) text ++= as map {_.argName}
+    text.mkString(" ")
   }
 
   /** call this to express success in custom validation. */
