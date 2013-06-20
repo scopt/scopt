@@ -124,11 +124,11 @@ abstract case class OptionParser[C](programName: String) {
   def errorOnUnknownArgument: Boolean = true
   
   def reportError(msg: String) {
-    System.err.println("Error: " + msg)
+    Console.err.println("Error: " + msg)
   }
   
   def reportWarning(msg: String) {
-    System.err.println("Warning: " + msg)
+    Console.err.println("Warning: " + msg)
   }
 
   /** adds usage text. */
@@ -180,7 +180,7 @@ abstract case class OptionParser[C](programName: String) {
     }
 
   def showHeader {
-    System.err.println(header)
+    Console.err.println(header)
   }
   def header: String = {
     import OptionDef._
@@ -188,7 +188,7 @@ abstract case class OptionParser[C](programName: String) {
   }
 
   def showUsage {
-    System.err.println(usage)
+    Console.err.println(usage)
   }
   def usage: String = {
     import OptionDef._

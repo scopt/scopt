@@ -1,6 +1,6 @@
 import org.specs2._
 import java.util.{Calendar, GregorianCalendar}
-import java.io.File
+import java.io.{ByteArrayOutputStream, File}
 import java.net.URI
 
 class ImmutableParserSpec extends Specification { def is =      s2"""
@@ -94,6 +94,18 @@ class ImmutableParserSpec extends Specification { def is =      s2"""
 
   help("help") should
     print usage text --help                                     ${helpParser()}
+
+  reportError("foo") should
+    print "Error: foo\n"                                        ${reportErrorParser("foo")}
+
+  reportWarning("foo") should
+    print "Warning: foo\n"                                      ${reportWarningParser("foo")}
+
+  showHeader should
+    print "scopt 3.x\n"                                         ${showHeaderParser()}
+
+  showUsage should
+    print usage text                                            ${showUsageParser()}
                                                                 """
 
   val unitParser1 = new scopt.OptionParser[Config]("scopt") {
@@ -378,6 +390,33 @@ update is a command.
     val expectedHeader = """scopt 3.x"""
 
     (parser.header === expectedHeader) and (parser.usage === expectedUsage)
+  }
+
+  val printParser1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    help("help") text("prints this usage text")
+  }
+  def printParser(body: scopt.OptionParser[Config] => Unit): String = {
+    val bos = new ByteArrayOutputStream()
+    Console.withErr(bos) { body(printParser1) }
+    bos.toString("UTF-8")
+  }
+  def reportErrorParser(msg: String) = {
+    printParser(_.reportError(msg)) === "Error: foo\n"
+  }
+  def reportWarningParser(msg: String) = {
+    printParser(_.reportWarning(msg)) === "Warning: foo\n"
+  }
+  def showHeaderParser() = {
+    printParser(_.showHeader) === "scopt 3.x\n"
+  }
+  def showUsageParser() = {
+    printParser(_.showUsage) === """scopt 3.x
+Usage: scopt [options]
+
+  --help
+        prints this usage text
+"""
   }
 
   case class Config(flag: Boolean = false, intValue: Int = 0, stringValue: String = "",

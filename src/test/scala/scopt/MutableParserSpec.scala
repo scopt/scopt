@@ -1,5 +1,5 @@
 import org.specs2._
-import java.io.File
+import java.io.{ByteArrayOutputStream, File}
 
 class MutableParserSpec extends Specification { def is =      s2"""
   This is a specification to check the mutable parser
@@ -64,7 +64,19 @@ class MutableParserSpec extends Specification { def is =      s2"""
     parse () out of update                                      ${cmdParser("update")}
 
   help("help") should
-    print usage text --help                                     ${helpParser()}       
+    print usage text --help                                     ${helpParser()}
+
+  reportError("foo") should
+    print "Error: foo\n"                                        ${reportErrorParser("foo")}
+
+  reportWarning("foo") should
+    print "Warning: foo\n"                                      ${reportWarningParser("foo")}
+
+  showHeader should
+    print "scopt 3.x\n"                                         ${showHeaderParser()}
+
+  showUsage should
+    print usage text                                            ${showUsageParser()}
                                                                 """
 
   def unitParser(args: String*) = {
@@ -304,5 +316,32 @@ Command: update [options]
 update is a command.
   --xyz <value>
         xyz is a boolean property"""
+  }
+
+  def printParser(body: scopt.OptionParser[Unit] => Unit): String = {
+    val parser = new scopt.OptionParser[Unit]("scopt") {
+      head("scopt", "3.x")
+      help("help") text("prints this usage text")
+    }
+    val bos = new ByteArrayOutputStream()
+    Console.withErr(bos) { body(parser) }
+    bos.toString("UTF-8")
+  }
+  def reportErrorParser(msg: String) = {
+    printParser(_.reportError(msg)) === "Error: foo\n"
+  }
+  def reportWarningParser(msg: String) = {
+    printParser(_.reportWarning(msg)) === "Warning: foo\n"
+  }
+  def showHeaderParser() = {
+    printParser(_.showHeader) === "scopt 3.x\n"
+  }
+  def showUsageParser() = {
+    printParser(_.showUsage) === """scopt 3.x
+Usage: scopt [options]
+
+  --help
+        prints this usage text
+"""
   }
 }
