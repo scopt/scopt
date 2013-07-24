@@ -194,7 +194,7 @@ abstract case class OptionParser[C](programName: String) {
   }
   def usage: String = {
     import OptionDef._
-    val unsorted = options filter {_.kind != Head}
+    val unsorted = options filter { o => o.kind != Head && !o.isHidden }
     val (unseen, xs) = unsorted partition {_.hasParent} match {
       case (p, np) => (ListBuffer() ++ p, ListBuffer() ++ np)
     }
@@ -383,14 +383,16 @@ class OptionDef[A: Read, C](
   _validations: Seq[A => Either[String, Unit]],
   _parentId: Option[Int],
   _minOccurs: Int,
-  _maxOccurs: Int) {
+  _maxOccurs: Int,
+  _isHidden: Boolean) {
   import OptionDef._
   
   def this(parser: OptionParser[C], kind: OptionDefKind, name: String) =
     this(_parser = parser, _id = OptionDef.generateId, _kind = kind, _name = name,
       _shortOpt = None, _keyName = None, _valueName = None,
       _desc = "", _action = { (a: A, c: C) => c },
-      _validations = Seq(), _parentId = None, _minOccurs = 0, _maxOccurs = 1)
+      _validations = Seq(), _parentId = None, _minOccurs = 0, _maxOccurs = 1,
+      _isHidden = false)
 
   private[scopt] def copy(
     _parser: OptionParser[C] = this._parser,
@@ -405,10 +407,12 @@ class OptionDef[A: Read, C](
     _validations: Seq[A => Either[String, Unit]] = this._validations,
     _parentId: Option[Int] = this._parentId,
     _minOccurs: Int = this._minOccurs,
-    _maxOccurs: Int = this._maxOccurs): OptionDef[A, C] =
+    _maxOccurs: Int = this._maxOccurs,
+    _isHidden: Boolean = this._isHidden): OptionDef[A, C] =
     new OptionDef(_parser = _parser, _id = _id, _kind = _kind, _name = _name, _shortOpt = _shortOpt,
       _keyName = _keyName, _valueName = _valueName, _desc = _desc, _action = _action,
-      _validations = _validations, _parentId = _parentId, _minOccurs = _minOccurs, _maxOccurs = _maxOccurs)
+      _validations = _validations, _parentId = _parentId, _minOccurs = _minOccurs, _maxOccurs = _maxOccurs,
+      _isHidden = _isHidden)
 
   private[this] def read: Read[A] = implicitly[Read[A]]
   
@@ -455,7 +459,10 @@ class OptionDef[A: Read, C](
   /** Adds custom validation. */
   def validate(f: A => Either[String, Unit]) =
     _parser.updateOption(copy(_validations = _validations :+ f))
-  
+  /** Hides the option in any usage text. */
+  def hidden(): OptionDef[A, C] =
+    _parser.updateOption(copy(_isHidden = true))
+
   private[scopt] def parent(x: OptionDef[_, C]): OptionDef[A, C] =
     _parser.updateOption(copy(_parentId = Some(x.id)))
   /** Adds opt/arg under this command. */
@@ -473,6 +480,7 @@ class OptionDef[A: Read, C](
   private[scopt] def shortOptOrBlank: String = _shortOpt getOrElse("")
   private[scopt] def hasParent: Boolean = _parentId.isDefined
   private[scopt] def getParentId: Option[Int] = _parentId
+  private[scopt] def isHidden: Boolean = _isHidden
 
   private[scopt] def applyArgument(arg: String, config: C): Either[Seq[String], C] =
     try {

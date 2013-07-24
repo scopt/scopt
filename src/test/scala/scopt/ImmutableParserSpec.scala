@@ -62,6 +62,9 @@ class ImmutableParserSpec extends Specification { def is =      s2"""
   opt[String]("foo") required() action { x => x } should
     fail to parse Nil                                           ${requiredFail()}
 
+  opt[Unit]("debug") hidden() action { x => x } should
+    parse () out of --debug                                     ${unitParserHidden("--debug")}
+
   unknown options should
     fail to parse by default                                    ${intParserFail("-z", "bar")}
 
@@ -110,13 +113,20 @@ class ImmutableParserSpec extends Specification { def is =      s2"""
     print usage text                                            ${showUsageParser()}
                                                                 """
 
+  import SpecUtil._
+
   val unitParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
     opt[Unit]('f', "foo") action { (x, c) => c.copy(flag = true) }
+    opt[Unit]("debug") action { (x, c) => c.copy(debug = true) }
   }
   def unitParser(args: String*) = {
     val result = unitParser1.parse(args.toSeq, Config())
     result.get.flag === true
+  }
+  def unitParserHidden(args: String*) = {
+    val result = unitParser1.parse(args.toSeq, Config())
+    result.get.debug === true
   }
 
   val groupParser1 = new scopt.OptionParser[Config]("scopt") {
@@ -345,7 +355,7 @@ class ImmutableParserSpec extends Specification { def is =      s2"""
 
   def helpParser(args: String*) = {
     case class Config(foo: Int = -1, out: File = new File("."), xyz: Boolean = false,
-      libName: String = "", maxCount: Int = -1, verbose: Boolean = false,
+      libName: String = "", maxCount: Int = -1, verbose: Boolean = false, debug: Boolean = false,
       mode: String = "", files: Seq[File] = Seq(), keepalive: Boolean = false)
     val parser = new scopt.OptionParser[Config]("scopt") {
       head("scopt", "3.x")
@@ -359,16 +369,20 @@ class ImmutableParserSpec extends Specification { def is =      s2"""
       } keyValueName("<libname>", "<max>") text("maximum count for <libname>")
       opt[Unit]("verbose") action { (_, c) =>
         c.copy(verbose = true) } text("verbose is a flag")
+      opt[Unit]("debug") hidden() action { (_, c) =>
+        c.copy(debug = true) } text("this option is hidden in any usage text")
       help("help") text("prints this usage text")
       arg[File]("<file>...") unbounded() optional() action { (x, c) =>
         c.copy(files = c.files :+ x) } text("optional unbounded args")
-      note("some notes.\n")
+      note("some notes.".newline)
       cmd("update") action { (_, c) =>
         c.copy(mode = "update") } text("update is a command.") children(
         opt[Unit]("not-keepalive") abbr("nk") action { (_, c) =>
           c.copy(keepalive = false) } text("disable keepalive"),
         opt[Boolean]("xyz") action { (x, c) =>
-          c.copy(xyz = x) } text("xyz is a boolean property")
+          c.copy(xyz = x) } text("xyz is a boolean property"),
+        opt[Unit]("debug-update") hidden() action { (_, c) =>
+          c.copy(debug = true) } text("this option is hidden in any usage text")
       )
     }
     parser.parse(args.toSeq, Config())
@@ -394,7 +408,7 @@ update is a command.
   -nk | --not-keepalive
         disable keepalive
   --xyz <value>
-        xyz is a boolean property"""
+        xyz is a boolean property""".newlines
     val expectedHeader = """scopt 3.x"""
 
     (parser.header === expectedHeader) and (parser.usage === expectedUsage)
@@ -410,13 +424,13 @@ update is a command.
     bos.toString("UTF-8")
   }
   def reportErrorParser(msg: String) = {
-    printParser(_.reportError(msg)) === "Error: foo\n"
+    printParser(_.reportError(msg)) === "Error: foo".newline
   }
   def reportWarningParser(msg: String) = {
-    printParser(_.reportWarning(msg)) === "Warning: foo\n"
+    printParser(_.reportWarning(msg)) === "Warning: foo".newline
   }
   def showHeaderParser() = {
-    printParser(_.showHeader) === "scopt 3.x\n"
+    printParser(_.showHeader) === "scopt 3.x".newline
   }
   def showUsageParser() = {
     printParser(_.showUsage) === """scopt 3.x
@@ -428,7 +442,7 @@ Usage: scopt [options]
   }
 
   case class Config(flag: Boolean = false, intValue: Int = 0, stringValue: String = "",
-    doubleValue: Double = 0.0, boolValue: Boolean = false,
+    doubleValue: Double = 0.0, boolValue: Boolean = false, debug: Boolean = false,
     bigDecimalValue: BigDecimal = BigDecimal("0.0"),
     calendarValue: Calendar = new GregorianCalendar(1900, Calendar.JANUARY, 1),
     fileValue: File = new File("."),

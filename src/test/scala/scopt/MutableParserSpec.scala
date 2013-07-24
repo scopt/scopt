@@ -42,6 +42,9 @@ class MutableParserSpec extends Specification { def is =      s2"""
   opt[String]("foo") required() foreach { x => x } should
     fail to parse Nil                                           ${requiredFail()}
 
+  opt[Unit]("debug") hidden() foreach { x => x } should
+    parse () out of --debug                                     ${unitParserHidden("--debug")}
+
   unknown options should
     fail to parse by default                                    ${intParserFail("-z", "bar")}
 
@@ -79,6 +82,8 @@ class MutableParserSpec extends Specification { def is =      s2"""
     print usage text                                            ${showUsageParser()}
                                                                 """
 
+  import SpecUtil._
+
   def unitParser(args: String*) = {
     var foo = false
     val parser = new scopt.OptionParser[Unit]("scopt") {
@@ -87,6 +92,16 @@ class MutableParserSpec extends Specification { def is =      s2"""
     }
     val result = parser.parse(args.toSeq)
     (result === true) and (foo === true)
+  }
+
+  def unitParserHidden(args: String*) = {
+    var debug = false
+    val parser = new scopt.OptionParser[Unit]("scopt") {
+      head("scopt", "3.x")
+      opt[Unit]("debug") hidden() foreach { _ => debug = true }
+    }
+    val result = parser.parse(args.toSeq)
+    debug === true
   }
 
   def intParser(args: String*) = {
@@ -269,7 +284,7 @@ class MutableParserSpec extends Specification { def is =      s2"""
 
   def helpParser(args: String*) = {
     case class Config(foo: Int = -1, out: File = new File("."), xyz: Boolean = false,
-      libName: String = "", maxCount: Int = -1, verbose: Boolean = false,
+      libName: String = "", maxCount: Int = -1, verbose: Boolean = false, debug: Boolean = false,
       mode: String = "", files: Seq[File] = Seq(), keepalive: Boolean = false)
     var c = Config()    
     val parser = new scopt.OptionParser[Unit]("scopt") {
@@ -284,16 +299,20 @@ class MutableParserSpec extends Specification { def is =      s2"""
       } keyValueName("<libname>", "<max>") text("maximum count for <libname>")
       opt[Unit]("verbose") foreach { _ =>
         c = c.copy(verbose = true) } text("verbose is a flag")
+      opt[Unit]("debug") hidden() foreach { _ =>
+        c = c.copy(debug = true) } text("this option is hidden in any usage text")
       help("help") text("prints this usage text")
       arg[File]("<file>...") unbounded() optional() foreach { x =>
         c = c.copy(files = c.files :+ x) } text("optional unbounded args")
-      note("some notes.\n")
+      note("some notes.".newline)
       cmd("update") foreach { _ =>
         c.copy(mode = "update") } text("update is a command.") children(
         opt[Unit]("not-keepalive") abbr("nk") foreach { _ =>
           c.copy(keepalive = false) } text("disable keepalive"),
         opt[Boolean]("xyz") foreach { x =>
-          c = c.copy(xyz = x) } text("xyz is a boolean property")
+          c = c.copy(xyz = x) } text("xyz is a boolean property"),
+        opt[Unit]("debug-update") hidden() foreach { _ =>
+          c = c.copy(debug = true) } text("this option is hidden in any usage text")
       )
     }
     parser.parse(args.toSeq)
@@ -332,13 +351,13 @@ update is a command.
     bos.toString("UTF-8")
   }
   def reportErrorParser(msg: String) = {
-    printParser(_.reportError(msg)) === "Error: foo\n"
+    printParser(_.reportError(msg)) === "Error: foo".newline
   }
   def reportWarningParser(msg: String) = {
-    printParser(_.reportWarning(msg)) === "Warning: foo\n"
+    printParser(_.reportWarning(msg)) === "Warning: foo".newline
   }
   def showHeaderParser() = {
-    printParser(_.showHeader) === "scopt 3.x\n"
+    printParser(_.showHeader) === "scopt 3.x".newline
   }
   def showUsageParser() = {
     printParser(_.showUsage) === """scopt 3.x

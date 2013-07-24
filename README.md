@@ -21,7 +21,7 @@ Either case, first you need a case class that represents the configuration:
 ```scala
 import java.io.File
 case class Config(foo: Int = -1, out: File = new File("."), xyz: Boolean = false,
-  libName: String = "", maxCount: Int = -1, verbose: Boolean = false,
+  libName: String = "", maxCount: Int = -1, verbose: Boolean = false, debug: Boolean = false,
   mode: String = "", files: Seq[File] = Seq())
 ```
 
@@ -45,6 +45,8 @@ val parser = new scopt.OptionParser[Config]("scopt") {
   } keyValueName("<libname>", "<max>") text("maximum count for <libname>")
   opt[Unit]("verbose") action { (_, c) =>
     c.copy(verbose = true) } text("verbose is a flag")
+  opt[Unit]("debug") hidden() action { (_, c) =>
+    c.copy(debug = true) } text("this option is hidden in any usage text")
   note("some notes.\n")
   help("help") text("prints this usage text")
   arg[File]("<file>...") unbounded() optional() action { (x, c) =>
@@ -204,6 +206,8 @@ val parser = new scopt.OptionParser[Unit]("scopt") {
   } keyValueName("<libname>", "<max>") text("maximum count for <libname>")
   opt[Unit]("verbose") foreach { _ =>
     c = c.copy(verbose = true) } text("verbose is a flag")
+  opt[Unit]("debug") hidden() foreach { _ =>
+    c = c.copy(debug = true) } text("this option is hidden in any usage text")
   note("some notes.\n")
   help("help") text("prints this usage text")
   arg[java.io.File]("<file>...") unbounded() optional() foreach { x =>
