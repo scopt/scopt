@@ -109,6 +109,10 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse foo out of backend update foo                         ${nestedCmdParser("backend", "update", "foo")}
     fail to parse backend foo                                   ${nestedCmdParserFail("backend", "foo")}
 
+  cmd("cmd1") children( option('a') ) cmd("cmd2") children (option('a')) should
+    parse foo out of backend update foo                         ${nestedOptionsCollideParse("cmd2", "-a", "a_arg")}
+
+
   help("help") should
     print usage text --help                                     ${helpParser()}
 
@@ -535,6 +539,25 @@ Usage: scopt [options]
 """
   }
 
+  case class NestedOpt(cmd1: Boolean = false, cmd2: Boolean = false, acmd1: String = "", bcmd1: String = "", acmd2: String = "", bcmd2: String = "")
+  def nestedOptionsCollideParse(args: String*) = {
+    val opts = new scopt.OptionParser[NestedOpt]("scopt") {
+      head("scopt", "3.x")
+      cmd("cmd1") action { (x, c) => c.copy(cmd1 = true) }  children {
+        opt[String]('a', "optacmd1") action { (x, c) => c.copy(acmd1 = x)}
+        opt[String]('b', "optbcmd1") action { (x, c) => c.copy(bcmd1 = x)}
+      }
+      cmd("cmd2") action { (x, c) => c.copy(cmd1 = true) }  children {
+        opt[String]('a', "optacmd2") action { (x, c) => c.copy(acmd2 = x)}
+        opt[String]('b', "optbcmd2") action { (x, c) => c.copy(bcmd2 = x)}
+      }
+    }
+    val res = opts.parse(args.toSeq, NestedOpt()).get
+    res.cmd2 must beTrue
+    res.acmd2.nonEmpty === true
+  }
+
+
   case class Config(flag: Boolean = false, intValue: Int = 0, stringValue: String = "",
     doubleValue: Double = 0.0, boolValue: Boolean = false, debug: Boolean = false,
     bigDecimalValue: BigDecimal = BigDecimal("0.0"),
@@ -544,4 +567,5 @@ Usage: scopt [options]
     key: String = "", a: String = "", b: String = "",
     seqInts: Seq[Int] = Seq(),
     mapStringToBool: Map[String,Boolean] = Map())
+
 }
