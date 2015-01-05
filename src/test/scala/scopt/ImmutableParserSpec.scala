@@ -107,7 +107,7 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
 
   cmd("backend") children( cmd("update") children(arg[String]("<a>") action { x => x} )) should
     parse foo out of backend update foo                         ${nestedCmdParser("backend", "update", "foo")}
-    fail to paser backend foo                                   ${nestedCmdParserFail("backend", "foo")}
+    fail to parse backend foo                                   ${nestedCmdParserFail("backend", "foo")}
 
   help("help") should
     print usage text --help                                     ${helpParser()}
