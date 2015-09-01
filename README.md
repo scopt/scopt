@@ -115,7 +115,7 @@ update is a command.
 Command line options are defined using `opt[A]('f', "foo")` or `opt[A]("foo")` where `A` is any type that is an instance of `Read` typeclass.
 
 - `Unit` works as a plain flag `--foo` or `-f`
-- `Int`, `Long`, `Double`, `String`, `BigInt`, `BigDecimal`, `java.io.File`, `java.net.URI`, and `java.net.InetAddress` accept a value like `--foo 80` or `--foo:80`
+- `Int`, `Long`, `Double`, `String`, `BigInt`, `BigDecimal`, `java.io.File`, `java.net.URI`, `java.net.InetAddress`, and `Regex` accept a value like `--foo 80` or `--foo:80`
 - `Boolean` accepts a value like `--foo true` or `--foo:1`
 - `java.util.Calendar` accepts a value like `--foo 2000-12-01`
 - A pair of types like `(String, Int)` accept a key-value like `--foo:k=1` or `-f k=1`

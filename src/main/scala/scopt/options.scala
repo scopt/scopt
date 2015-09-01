@@ -1,7 +1,7 @@
 package scopt
 
 import java.net.UnknownHostException
-
+import java.util.regex.PatternSyntaxException
 import collection.mutable.{ListBuffer, ListMap}
 
 trait Read[A] { self =>
@@ -19,6 +19,7 @@ object Read {
   import java.io.File
   import java.net.URI
   import java.net.InetAddress
+  import scala.util.matching.Regex
   def reads[A](f: String => A): Read[A] = new Read[A] {
     val arity = 1
     val reads = f
@@ -52,6 +53,7 @@ object Read {
   implicit val fileRead: Read[File]           = reads { new File(_) }
   implicit val uriRead: Read[URI]             = reads { new URI(_) }
   implicit val inetAddress: Read[InetAddress] = reads { InetAddress.getByName(_) }
+  implicit val regex: Read[Regex]             = reads { _.r }
 
   implicit def tupleRead[A1: Read, A2: Read]: Read[(A1, A2)] = new Read[(A1, A2)] {
     val arity = 2
@@ -568,9 +570,10 @@ class OptionDef[A: Read, C](
         case Left(xs) => Left(xs)
       }
     } catch {
-      case e: NumberFormatException => Left(Seq(shortDescription.capitalize + " expects a number but was given '" + arg + "'"))
-      case e: UnknownHostException  => Left(Seq(shortDescription.capitalize + " expects a host name or an IP address but was given '" + arg + "' which is invalid"))
-      case e: Throwable             => Left(Seq(shortDescription.capitalize + " failed when given '" + arg + "'. " + e.getMessage))
+      case e: NumberFormatException  => Left(Seq(shortDescription.capitalize + " expects a number but was given '" + arg + "'"))
+      case e: UnknownHostException   => Left(Seq(shortDescription.capitalize + " expects a host name or an IP address but was given '" + arg + "' which is invalid"))
+      case e: PatternSyntaxException => Left(Seq(shortDescription.capitalize + " expects a regex but was given '" + arg + "' which is invalid"))
+      case e: Throwable              => Left(Seq(shortDescription.capitalize + " failed when given '" + arg + "'. " + e.getMessage))
     }
   // number of tokens to read: 0 for no match, 2 for "--foo 1", 1 for "--foo:1"
   private[scopt] def shortOptTokens(arg: String): Int =
