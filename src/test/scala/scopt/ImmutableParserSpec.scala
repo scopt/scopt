@@ -1,5 +1,5 @@
 import java.security.{AccessControlException, Permission}
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
+import java.util.concurrent.atomic.{AtomicInteger, AtomicBoolean, AtomicReference}
 
 import org.specs2._
 import java.util.{Calendar, GregorianCalendar}
@@ -533,8 +533,8 @@ update is a command.
     help("help") text("prints this usage text")
   }
 
-  lazy val terminationSafeParser1 = new scopt.OptionParser[Config]("scopt") {
-    override def terminate() = () ⇒ ()
+  def terminationSafeParser1(exitCode: AtomicInteger) = new scopt.OptionParser[Config]("scopt") {
+    override def terminate(ec: Int) = exitCode.set(ec)
     version("version")
     opt[Unit]("debug") action { (x, c) => c.copy(debug = true) }
     help("help") text("prints this usage text")
@@ -542,8 +542,10 @@ update is a command.
 
   def terminationSafeParser(args: String*) = {
     val exitWasCalled = new AtomicBoolean(false)
+    val exitCode = new AtomicInteger(-1)
     val sec = System.getSecurityManager
 
+    // We create a custom security manager for the purposes of determining whether `System.exit` was called
     val exitInhibitor = new SecurityManager() {
       override def checkExit(status: Int): Unit = {
         exitWasCalled.set(true)
@@ -562,12 +564,14 @@ update is a command.
 
     System.setSecurityManager(exitInhibitor)
 
-    val result = terminationSafeParser1.parse(args.toSeq, Config())
+    val parser = terminationSafeParser1(exitCode)
+
+    val result = parser.parse(args.toSeq, Config())
 
     // Reset to previous.
     System.setSecurityManager(sec)
 
-    result.isDefined && !exitWasCalled.get()
+    result.isDefined && !exitWasCalled.get() && exitCode.get() == 0
   }
 
   def printParserError(body: scopt.OptionParser[Config] => Unit): String = {
