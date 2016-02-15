@@ -88,6 +88,10 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse Map("true" -> true, "false" -> false) out of "--foo=true=true,false=false" ${mapParser("--foo=true=true,false=false")}
     fail to parse --foo                                         ${mapParserFail("foo")}
 
+  opt[List[(String,Srting)]]("foo") action { x => x } should
+    parse Map("key" -> "1", "key" -> "2") out of --foo "key=1,false=false" ${seqTupleParser("--foo","key=1,key=2")}
+    fail to parse --foo                                         ${seqTupleParserFail("foo")}
+
   opt[String]("foo") required() action { x => x } should
     fail to parse Nil                                           ${requiredFail()}
 
@@ -321,6 +325,19 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     val result = mapParser1.parse(args.toSeq, Config())
     result === None
   }
+  val seqTupleParser1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[Seq[(String,String)]]("foo") action { case (s, c) => c.copy(seqTupleStringString = s) }
+    help("help")
+  }
+  def seqTupleParser(args: String*) = {
+    val result = seqTupleParser1.parse(args.toSeq, Config())
+    result.get.seqTupleStringString === List("key" -> "1","key" -> "2")
+  }
+  def seqTupleParserFail(args: String*) = {
+    val result = seqTupleParser1.parse(args.toSeq, Config())
+    result === None
+  }
 
   //parse Map("true" -> true, "false" -> false) out of --foo "true=true,false=false" ${mapParser("--foo","true=true,false=false")}
 
@@ -534,40 +551,15 @@ update is a command.
   }
 
   lazy val terminationSafeParser1 = new scopt.OptionParser[Config]("scopt") {
-    override def terminate() = () ⇒ ()
+    override def terminate(): Unit = ()
     version("version")
     opt[Unit]("debug") action { (x, c) => c.copy(debug = true) }
     help("help") text("prints this usage text")
   }
 
   def terminationSafeParser(args: String*) = {
-    val exitWasCalled = new AtomicBoolean(false)
-    val sec = System.getSecurityManager
-
-    val exitInhibitor = new SecurityManager() {
-      override def checkExit(status: Int): Unit = {
-        exitWasCalled.set(true)
-        throw new SecurityException("Exit called when it shouldn't have been")
-      }
-      override def checkPermission(perm: Permission): Unit = {
-        perm.getName match {
-          case "setSecurityManager" | "modifyThread" ⇒ ()
-          case _ ⇒ perm.getActions match {
-            case "read" ⇒ ()
-            case _ ⇒ super.checkPermission(perm)
-          }
-        }
-      }
-    }
-
-    System.setSecurityManager(exitInhibitor)
-
     val result = terminationSafeParser1.parse(args.toSeq, Config())
-
-    // Reset to previous.
-    System.setSecurityManager(sec)
-
-    result.isDefined && !exitWasCalled.get()
+    result.isDefined
   }
 
   def printParserError(body: scopt.OptionParser[Config] => Unit): String = {
@@ -606,5 +598,6 @@ Usage: scopt [options]
     uriValue: URI = new URI("http://localhost"),
     key: String = "", a: String = "", b: String = "",
     seqInts: Seq[Int] = Seq(),
-    mapStringToBool: Map[String,Boolean] = Map())
+    mapStringToBool: Map[String,Boolean] = Map(),
+    seqTupleStringString: Seq[(String, String)] = Nil)
 }

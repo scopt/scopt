@@ -90,6 +90,11 @@ object Read {
   implicit def mapRead[K: Read, V: Read]: Read[Map[K,V]] = reads { (s: String) =>
     s.split(sep).map(implicitly[Read[(K,V)]].reads).toMap
   }
+
+  // reads("1=false,1=true") == List((1 -> false), (1 -> true))
+  implicit def seqTupleRead[K: Read, V: Read]: Read[Seq[(K,V)]] = reads { (s: String) =>
+    s.split(sep).map(implicitly[Read[(K,V)]].reads).toSeq
+  }
 }
 
 trait Zero[A] {
