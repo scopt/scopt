@@ -21,54 +21,71 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   opt[Int]('f', "foo") action { x => x } should
     parse 1 out of --foo 1                                      ${intParser("--foo", "1")}
     parse 1 out of --foo:1                                      ${intParser("--foo:1")}
+    parse 1 out of --foo=1                                      ${intParser("--foo=1")}
     parse 1 out of -f 1                                         ${intParser("-f", "1")}
     parse 1 out of -f:1                                         ${intParser("-f:1")}
     fail to parse --foo                                         ${intParserFail{"--foo"}}
     fail to parse --foo bar                                     ${intParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${intParserFail("--foo=bar")}
 
   opt[String]("foo") action { x => x } should
     parse "bar" out of --foo bar                                ${stringParser("--foo", "bar")}
     parse "bar" out of --foo:bar                                ${stringParser("--foo:bar")}
+    parse "bar" out of --foo=bar                                ${stringParser("--foo=bar")}
 
   opt[Double]("foo") action { x => x } should
     parse 1.0 out of --foo 1.0                                  ${doubleParser("--foo", "1.0")}
     parse 1.0 out of --foo:1.0                                  ${doubleParser("--foo:1.0")}
+    parse 1.0 out of --foo=1.0                                  ${doubleParser("--foo=1.0")}
     fail to parse --foo bar                                     ${doubleParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${doubleParserFail("--foo=bar")}
 
   opt[Boolean]("foo") action { x => x } should
     parse true out of --foo true                                ${trueParser("--foo", "true")}
     parse true out of --foo:true                                ${trueParser("--foo:true")}
+    parse true out of --foo=true                                ${trueParser("--foo=true")}
     parse true out of --foo 1                                   ${trueParser("--foo", "1")}
     parse true out of --foo:1                                   ${trueParser("--foo:1")}
     fail to parse --foo bar                                     ${boolParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${boolParserFail("--foo=bar")}
 
   opt[BigDecimal]("foo") action { x => x } should
     parse 1.0 out of --foo 1.0                                  ${bigDecimalParser("--foo", "1.0")}
+    parse 1.0 out of --foo=1.0                                  ${bigDecimalParser("--foo=1.0")}
     fail to parse --foo bar                                     ${bigDecimalParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${bigDecimalParserFail("--foo=bar")}
 
   opt[Calendar]("foo") action { x => x } should
     parse 2000-01-01 out of --foo 2000-01-01                    ${calendarParser("--foo", "2000-01-01")}
+    parse 2000-01-01 out of --foo=2000-01-01                    ${calendarParser("--foo=2000-01-01")}
     fail to parse --foo bar                                     ${calendarParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${calendarParserFail("--foo=bar")}
 
   opt[File]("foo") action { x => x } should
     parse test.txt out of --foo test.txt                        ${fileParser("--foo", "test.txt")}
+    parse test.txt out of --foo=test.txt                        ${fileParser("--foo=test.txt")}
 
   opt[URI]("foo") action { x => x } should
     parse http://github.com/ out of --foo http://github.com/    ${uriParser("--foo", "http://github.com/")}
+    parse http://github.com/ out of --foo=http://github.com/    ${uriParser("--foo=http://github.com/")}
 
   opt[(String, Int)]("foo") action { x => x } should
     parse ("k", 1) out of --foo k=1                             ${pairParser("--foo", "k=1")}
     parse ("k", 1) out of --foo:k=1                             ${pairParser("--foo:k=1")}
+    parse ("k", 1) out of --foo=k=1                             ${pairParser("--foo=k=1")}
     fail to parse --foo                                         ${pairParserFail("--foo")}
     fail to parse --foo bar                                     ${pairParserFail("--foo", "bar")}
     fail to parse --foo k=bar                                   ${pairParserFail("--foo", "k=bar")}
+    fail to parse --foo=k=bar                                   ${pairParserFail("--foo=k=bar")}
 
   opt[Seq[Int]]("foo") action { x => x } should
     parse Seq(1,2,3) out of --foo "1,2,3"                       ${seqParser("--foo","1,2,3")}
+    parse Seq(1,2,3) out of "--foo=1,2,3"                       ${seqParser("--foo=1,2,3")}
     fail to parse --foo                                         ${seqParserFail("--foo")}
 
   opt[Map[String,Boolean]]("foo") action { x => x } should
     parse Map("true" -> true, "false" -> false) out of --foo "true=true,false=false" ${mapParser("--foo","true=true,false=false")}
+    parse Map("true" -> true, "false" -> false) out of "--foo=true=true,false=false" ${mapParser("--foo=true=true,false=false")}
     fail to parse --foo                                         ${mapParserFail("foo")}
 
   opt[List[(String,Srting)]]("foo") action { x => x } should

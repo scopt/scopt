@@ -11,33 +11,43 @@ class MutableParserSpec extends Specification { def is = args(sequential = true)
   opt[Int]('f', "foo") foreach { x => x } should
     parse 1 out of --foo 1                                      ${intParser("--foo", "1")}
     parse 1 out of --foo:1                                      ${intParser("--foo:1")}
+    parse 1 out of --foo=1                                      ${intParser("--foo=1")}
     parse 1 out of -f 1                                         ${intParser("-f", "1")}
     parse 1 out of -f:1                                         ${intParser("-f:1")}
     fail to parse --foo                                         ${intParserFail{"--foo"}}
     fail to parse --foo bar                                     ${intParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${intParserFail("--foo=bar")}
 
   opt[String]("foo") foreach { x => x } should
     parse "bar" out of --foo bar                                ${stringParser("--foo", "bar")}
     parse "bar" out of --foo:bar                                ${stringParser("--foo:bar")}
+    parse "bar" out of --foo=bar                                ${stringParser("--foo=bar")}
 
   opt[Double]("foo") foreach { x => x } should
     parse 1.0 out of --foo 1.0                                  ${doubleParser("--foo", "1.0")}
     parse 1.0 out of --foo:1.0                                  ${doubleParser("--foo:1.0")}
+    parse 1.0 out of --foo=1.0                                  ${doubleParser("--foo=1.0")}
     fail to parse --foo bar                                     ${doubleParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${doubleParserFail("--foo=bar")}
 
   opt[Boolean]("foo") foreach { x => x } should
     parse true out of --foo true                                ${trueParser("--foo", "true")}
     parse true out of --foo:true                                ${trueParser("--foo:true")}
+    parse true out of --foo=true                                ${trueParser("--foo=true")}
     parse true out of --foo 1                                   ${trueParser("--foo", "1")}
     parse true out of --foo:1                                   ${trueParser("--foo:1")}
+    parse true out of --foo=1                                   ${trueParser("--foo=1")}
     fail to parse --foo bar                                     ${boolParserFail("--foo", "bar")}
+    fail to parse --foo=bar                                     ${boolParserFail("--foo=bar")}
 
   opt[(String, Int)]("foo") foreach { x => x } should
     parse ("k", 1) out of --foo k=1                             ${pairParser("--foo", "k=1")}
     parse ("k", 1) out of --foo:k=1                             ${pairParser("--foo:k=1")}
+    parse ("k", 1) out of --foo=k=1                             ${pairParser("--foo=k=1")}
     fail to parse --foo                                         ${pairParserFail("--foo")}
     fail to parse --foo bar                                     ${pairParserFail("--foo", "bar")}
     fail to parse --foo k=bar                                   ${pairParserFail("--foo", "k=bar")}
+    fail to parse --foo=k=bar                                   ${pairParserFail("--foo=k=bar")}
 
   opt[String]("foo") required() foreach { x => x } should
     fail to parse Nil                                           ${requiredFail()}

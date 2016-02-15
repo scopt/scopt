@@ -595,7 +595,7 @@ class OptionDef[A: Read, C](
     }
   private[scopt] def longOptTokens(arg: String): Int =
     if (arg == fullName) 1 + read.tokensToRead
-    else if (arg startsWith (fullName + ":")) 1
+    else if ((arg startsWith (fullName + ":")) || (arg startsWith (fullName + "="))) 1
     else 0
   private[scopt] def tokensToRead(i: Int, args: Seq[String]): Int =
     if (i >= args.length || kind != Opt) 0
