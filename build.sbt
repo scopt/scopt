@@ -1,7 +1,10 @@
-def v: String = "3.5.0"
+def v: String = "3.6.0"
 
-lazy val root = (project in file(".")).
-  settings(
+lazy val scopt = 
+  crossProject(JVMPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
+  .in(file("."))
+  .settings(
     inThisBuild(Seq(
       version := v,
       organization := "com.github.scopt",
@@ -25,3 +28,9 @@ lazy val root = (project in file(".")).
     // scaladoc fix
     unmanagedClasspath in Compile += Attributed.blank(new java.io.File("doesnotexist"))
   )
+  .nativeSettings(resolvers += Resolver.sonatypeRepo("snapshots"))
+
+lazy val scoptJVM = scopt.jvm
+
+lazy val scoptNative = scopt.native
+
