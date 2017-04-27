@@ -801,7 +801,10 @@ abstract class OptionParserHoldOutput[C](programName: String) extends OptionPars
     super.parse(args,init)
   }
 
+  /** Retrieve held output from stderr from last parse */
   def getErr() = err
+
+  /** Retrieve held output from stdout from last parse */
   def getOut() = out
 
   override def reportError(msg: String): Unit = err += "Error: "+msg+"\n"
