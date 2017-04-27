@@ -229,7 +229,7 @@ private[scopt] case object Check extends OptionDefKind
  * }
  * }}}
  */
-abstract case class OptionParser[C](programName: String) {
+abstract class OptionParser[C](programName: String) {
   protected val options = new ListBuffer[OptionDef[_, C]]
   protected val helpOptions = new ListBuffer[OptionDef[_, C]]
 
@@ -788,4 +788,42 @@ private[scopt] object OptionDef {
   val atomic = new java.util.concurrent.atomic.AtomicInteger
   def generateId: Int = atomic.incrementAndGet
   def makeSuccess[A]: Either[A, Unit] = Right(())
+}
+
+abstract class OptionParserHoldOutput[C](programName: String) extends OptionParser[C](programName) {
+
+  private var err = ""
+  private var out = ""
+
+  override def parse(args: Seq[String], init: C): Option[C] = {
+    err = ""
+    out = ""
+    super.parse(args,init)
+  }
+
+  /** Retrieve held output from stderr from last parse */
+  def getErr() = err
+
+  /** Retrieve held output from stdout from last parse */
+  def getOut() = out
+
+  override def reportError(msg: String): Unit = err += "Error: "+msg+"\n"
+
+  override def reportWarning(msg: String): Unit = err += "Warning: "+msg+"\n"
+
+  override def showTryHelp(): Unit = {
+    def oxford(xs: List[String]): String = xs match {
+      case a :: b :: Nil => a + " or " + b
+      case _             => (xs.dropRight(2) :+ xs.takeRight(2).mkString(", or ")).mkString(", ")
+    }
+    err += "Try " + oxford(helpOptions.toList map {_.fullName}) + " for more information."+"\n"
+  }
+
+  override def showHeader() = out += header + "\n"
+
+  override def showUsage(): Unit = out += usage + "\n"
+
+  override def showUsageAsError(): Unit = err += usage + "\n"
+
+  override def terminate(exitState: Either[String, Unit]): Unit = {}
 }
