@@ -88,14 +88,6 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse test.txt out of --foo test.txt                        ${fileParser("--foo", "test.txt")}
     parse test.txt out of --foo=test.txt                        ${fileParser("--foo=test.txt")}
 
-  opt[URI]("foo") action { x => x } should
-    parse http://github.com/ out of --foo http://github.com/    ${uriParser("--foo", "http://github.com/")}
-    parse http://github.com/ out of --foo=http://github.com/    ${uriParser("--foo=http://github.com/")}
-
-  opt[InetAddress]("foo") action { x => x } should
-    parse 8.8.8.8 out of --foo 8.8.8.8                          ${inetAddressParser("--foo", "8.8.8.8")}
-    parse 8.8.8.8 out of --foo=8.8.8.8                          ${inetAddressParser("--foo=8.8.8.8")}
-
   opt[Duration]("foo") action { x => x } should
     parse 30s out of --foo 30s                                  ${durationParser("--foo", "30s")}
     parse 30s out of --foo=30s                                  ${durationParser("--foo=30s")}
@@ -193,6 +185,14 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   emptyParser.showUsage
     print empty usage text                                      ${noOptionTest()}
                                                                 """
+  // opt[URI]("foo") action { x => x } should
+  //   parse http://github.com/ out of --foo http://github.com/    ${uriParser("--foo", "http://github.com/")}
+  //   parse http://github.com/ out of --foo=http://github.com/    ${uriParser("--foo=http://github.com/")}
+
+  // opt[InetAddress]("foo") action { x => x } should
+  //   parse 8.8.8.8 out of --foo 8.8.8.8                          ${inetAddressParser("--foo", "8.8.8.8")}
+  //   parse 8.8.8.8 out of --foo=8.8.8.8                          ${inetAddressParser("--foo=8.8.8.8")}
+
 
   import SpecUtil._
 
@@ -339,15 +339,15 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     result.get.fileValue === new File("test.txt")
   }
 
-  val uriParser1 = new scopt.OptionParser[Config]("scopt") {
-    head("scopt", "3.x")
-    opt[URI]("foo").action( (x, c) => c.copy(uriValue = x) )
-    help("help")
-  }
-  def uriParser(args: String*) = {
-    val result = uriParser1.parse(args.toSeq, Config())
-    result.get.uriValue === new URI("http://github.com/")
-  }
+  // val uriParser1 = new scopt.OptionParser[Config]("scopt") {
+  //   head("scopt", "3.x")
+  //   opt[URI]("foo").action( (x, c) => c.copy(uriValue = x) )
+  //   help("help")
+  // }
+  // def uriParser(args: String*) = {
+  //   val result = uriParser1.parse(args.toSeq, Config())
+  //   result.get.uriValue === new URI("http://github.com/")
+  // }
 
   val inetAddressParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")

@@ -16,7 +16,6 @@ trait Read[A] { self =>
 
 object Read extends platform.PlatformReadInstances {
 
-  import java.net.URI
   import scala.concurrent.duration.Duration
 
   def reads[A](f: String => A): Read[A] = new Read[A] {
@@ -61,7 +60,6 @@ object Read extends platform.PlatformReadInstances {
   }
 
   implicit val bigDecimalRead: Read[BigDecimal] = reads { BigDecimal(_) }
-  implicit val uriRead: Read[URI]             = reads { new URI(_) }
 
   implicit val durationRead: Read[Duration]   =
     reads { try {
