@@ -3,7 +3,7 @@ import com.typesafe.sbt.pgp.PgpKeys._
 // shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
 import sbtcrossproject.{crossProject, CrossType}
 
-def v: String = "3.6.0"
+def v: String = "3.6.1"
 
 lazy val root = project.in(file(".")).
   aggregate(scoptJS, scoptJVM, scoptNative).
