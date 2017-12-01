@@ -102,6 +102,11 @@ object Read extends platform.PlatformReadInstances {
   implicit def seqTupleRead[K: Read, V: Read]: Read[Seq[(K,V)]] = reads { (s: String) =>
     s.split(sep).map(implicitly[Read[(K,V)]].reads).toSeq
   }
+
+  implicit def optRead[R: Read]: Read[Option[R]] = reads {
+    case "" => None
+    case str => Some(implicitly[Read[R]].reads(str))
+  }
 }
 
 trait Zero[A] {
