@@ -48,6 +48,9 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse "bar" out of --foo bar                                ${stringParser("--foo", "bar")}
     parse "bar" out of --foo:bar                                ${stringParser("--foo:bar")}
     parse "bar" out of --foo=bar                                ${stringParser("--foo=bar")}
+    parse ""    out of --foo ''                                 ${emptyStringParser("--foo", "")}
+    parse ""    out of --foo:                                   ${emptyStringParser("--foo:")}
+    parse ""    out of --foo=                                   ${emptyStringParser("--foo=")}
 
   opt[Char]("foo") action { x => x } should
     parse 'b' out of --foo b                                    ${charParser("--foo", "b")}
@@ -261,6 +264,10 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   def stringParser(args: String*) = {
     val result = stringParser1.parse(args.toSeq, Config())
     result.get.stringValue === "bar"
+  }
+  def emptyStringParser(args: String*) = {
+    val result = stringParser1.parse(args.toSeq, Config())
+    result.get.stringValue === ""
   }
 
   val charParser1 = new scopt.OptionParser[Config]("scopt") {
