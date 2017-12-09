@@ -52,6 +52,15 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse ""    out of --foo:                                   ${emptyStringParser("--foo:")}
     parse ""    out of --foo=                                   ${emptyStringParser("--foo=")}
 
+  opt[Option[String]]("bar") action { x => Some(x) } should
+    parse None        out of Nil                                ${noneOptStringParser()}
+    parse Some("")    out of --bar ''                           ${emptyOptStringParser("--bar", "")}
+    parse Some("")    out of --bar:                             ${emptyOptStringParser("--bar:")}
+    parse Some("")    out of --bar=                             ${emptyOptStringParser("--bar=")}
+    parse Some("baz") out of --bar baz                          ${bazOptStringParser("--bar", "baz")}
+    parse Some("baz") out of --bar:baz                          ${bazOptStringParser("--bar:baz")}
+    parse Some("baz") out of --bar=baz                          ${bazOptStringParser("--bar=baz")}
+
   opt[Char]("foo") action { x => x } should
     parse 'b' out of --foo b                                    ${charParser("--foo", "b")}
     parse 'b' out of --foo:b                                    ${charParser("--foo:b")}
@@ -267,6 +276,7 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   val stringParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
     opt[String]("foo").action( (x, c) => c.copy(stringValue = x) )
+    opt[String]("bar").action( (x, c) => c.copy(optStringValue = Some(x)))
     help("help")
   }
   def stringParser(args: String*) = {
@@ -276,6 +286,18 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   def emptyStringParser(args: String*) = {
     val result = stringParser1.parse(args.toSeq, Config())
     result.get.stringValue === ""
+  }
+  def noneOptStringParser(args: String*) = {
+    val result = stringParser1.parse(args.toSeq, Config())
+    result.get.optStringValue === None
+  }
+  def emptyOptStringParser(args: String*) = {
+    val result = stringParser1.parse(args.toSeq, Config())
+    result.get.optStringValue === Some("")
+  }
+  def bazOptStringParser(args: String*) = {
+    val result = stringParser1.parse(args.toSeq, Config())
+    result.get.optStringValue === Some("baz")
   }
 
   val charParser1 = new scopt.OptionParser[Config]("scopt") {
@@ -862,5 +884,6 @@ Usage: scopt [update] [options]
     mapStringToBool: Map[String,Boolean] = Map(),
     seqTupleStringString: Seq[(String, String)] = Nil,
     charValue: Char = 0,
+    optStringValue: Option[String] = None,
     optIntValue: Option[Int] = None)
 }
