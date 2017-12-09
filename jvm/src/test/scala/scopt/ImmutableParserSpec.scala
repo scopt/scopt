@@ -126,6 +126,14 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
     parse Map("key" -> "1", "key" -> "2") out of --foo "key=1,false=false" ${seqTupleParser("--foo","key=1,key=2")}
     fail to parse --foo                                         ${seqTupleParserFail("foo")}
 
+  opt[Option[T]]("foo") action { x => x } should
+    parse None    out of --foo ''                               ${emptyLiftedOptionParser("--foo", "")}
+    parse None    out of --foo:                                 ${emptyLiftedOptionParser("--foo:")}
+    parse None    out of --foo=                                 ${emptyLiftedOptionParser("--foo=")}
+    parse Some(1) out of --foo 1                                ${nonEmptyLiftedOptionParser("--foo", "1")}
+    parse Some(1) out of --foo:1                                ${nonEmptyLiftedOptionParser("--foo:1")}
+    parse Some(1) out of --foo=1                                ${nonEmptyLiftedOptionParser("--foo=1")}
+
   opt[String]("foo") required() action { x => x } should
     fail to parse Nil                                           ${requiredFail()}
 
@@ -441,6 +449,18 @@ class ImmutableParserSpec extends Specification { def is = args(sequential = tru
   def seqTupleParserFail(args: String*) = {
     val result = seqTupleParser1.parse(args.toSeq, Config())
     result === None
+  }
+
+  val liftedOptionParser1 = new scopt.OptionParser[Config]("foo") {
+    opt[Option[Int]]("foo").action((i, c) => c.copy(optIntValue = i))
+  }
+  def emptyLiftedOptionParser(args: String*) = {
+    val result = liftedOptionParser1.parse(args.toSeq, Config())
+    result.get.optIntValue === None
+  }
+  def nonEmptyLiftedOptionParser(args: String*) = {
+    val result = liftedOptionParser1.parse(args.toSeq, Config())
+    result.get.optIntValue === Some(1)
   }
 
   //parse Map("true" -> true, "false" -> false) out of --foo "true=true,false=false" ${mapParser("--foo","true=true,false=false")}
@@ -840,5 +860,7 @@ Usage: scopt [update] [options]
     key: String = "", a: String = "", b: String = "",
     seqInts: Seq[Int] = Seq(),
     mapStringToBool: Map[String,Boolean] = Map(),
-    seqTupleStringString: Seq[(String, String)] = Nil, charValue: Char = 0)
+    seqTupleStringString: Seq[(String, String)] = Nil,
+    charValue: Char = 0,
+    optIntValue: Option[Int] = None)
 }
