@@ -146,6 +146,7 @@ abstract class OptionParser[C](programName: String) extends OptionDefCallback[C]
 
   def displayToOut(msg: String): Unit = defaultConfig.displayToOut(msg)
   def displayToErr(msg: String): Unit = defaultConfig.displayToErr(msg)
+  def displayToWarn(msg: String): Unit = defaultConfig.displayToWarn(msg)
 
   def header: String = header0
   def usage: String = usage0
@@ -191,6 +192,7 @@ abstract class OptionParser[C](programName: String) extends OptionDefCallback[C]
         override def showUsageOnError: Option[Boolean] = self.showUsageOnError
         override def displayToOut(msg: String): Unit = self.displayToOut(msg)
         override def displayToErr(msg: String): Unit = self.displayToErr(msg)
+        override def displayToWarn(msg: String): Unit = self.displayToWarn(msg)
         override def reportError(msg: String): Unit = self.reportError(msg)
         override def reportWarning(msg: String): Unit = self.reportWarning(msg)
 
