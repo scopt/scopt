@@ -48,7 +48,8 @@ lazy val scopt = (crossProject(JSPlatform, JVMPlatform, NativePlatform) in file(
     ),
     testFrameworks += new TestFramework("minitest.runner.Framework"),
     // scaladoc fix
-    unmanagedClasspath in Compile += Attributed.blank(new java.io.File("doesnotexist"))
+    unmanagedClasspath in Compile += Attributed.blank(new java.io.File("doesnotexist")),
+    libraryDependencies += "org.log4s" %% "log4s" % "1.8.2"
   )
   .platformsSettings(JVMPlatform, JSPlatform)(
     Seq(Compile, Test).map { x =>

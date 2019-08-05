@@ -1,5 +1,7 @@
 package scopt
 
+import org.log4s._
+
 trait OParserSetup {
   def renderingMode: RenderingMode
   def errorOnUnknownArgument: Boolean
@@ -12,26 +14,31 @@ trait OParserSetup {
   def showUsageOnError: Option[Boolean]
   def displayToOut(msg: String): Unit
   def displayToErr(msg: String): Unit
+  def displayToWarn(msg: String): Unit
   def reportError(msg: String): Unit
   def reportWarning(msg: String): Unit
   def terminate(exitState: Either[String, Unit]): Unit
 }
 
 abstract class DefaultOParserSetup extends OParserSetup {
+  private[this] val logger = getLogger
   override def renderingMode: RenderingMode = RenderingMode.TwoColumns
   override def errorOnUnknownArgument: Boolean = true
   override def showUsageOnError: Option[Boolean] = None
   override def displayToOut(msg: String): Unit = {
-    Console.out.println(msg)
+    logger.info(msg)
   }
   override def displayToErr(msg: String): Unit = {
-    Console.err.println(msg)
+    logger.error(msg)
+  }
+  override def displayToWarn(msg: String): Unit = {
+    logger.warn(msg)
   }
   override def reportError(msg: String): Unit = {
-    displayToErr("Error: " + msg)
+    displayToErr(msg)
   }
   override def reportWarning(msg: String): Unit = {
-    displayToErr("Warning: " + msg)
+    displayToWarn(msg)
   }
   override def terminate(exitState: Either[String, Unit]): Unit =
     exitState match {
