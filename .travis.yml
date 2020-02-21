@@ -8,7 +8,8 @@ script:
 env:
   matrix:
     - TEST_PROJECT="scoptJVM"
-    - TEST_PROJECT="scoptJS"
+    - TEST_PROJECT="scoptJS" SCALAJS_VERSION="1.0.0"
+    - TEST_PROJECT="scoptJS" SCALAJS_VERSION="0.6.28"
 
 scala:
    - 2.10.7
