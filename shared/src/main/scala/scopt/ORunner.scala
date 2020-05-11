@@ -263,6 +263,21 @@ private[scopt] object ORunner {
           xs foreach reportError
       }
     }
+    def handleDefault(opt: OptionDef[_, C]): Unit = {
+      val runnerAction = opt.kind match {
+        case OptHelp    => Some(helpAction)
+        case OptVersion => Some(versionAction)
+        case _          => None
+      }
+      opt.applyDefault(_config, runnerAction) match {
+        case Right(c) =>
+          _config = c
+          pushChildren(opt)
+        case Left(xs) =>
+          _error = true
+          xs foreach reportError
+      }
+    }
     def handleOccurrence(opt: OptionDef[_, C], pending: ListBuffer[OptionDef[_, C]]): Unit = {
       occurrences += (opt -> 1)
       if (occurrences(opt) >= opt.getMaxOccurs) {
@@ -316,8 +331,9 @@ private[scopt] object ORunner {
         case Some(option) =>
           handleOccurrence(option, pendingOptions)
           option(i, args) match {
-            case Right(v)          => handleArgument(option, v)
-            case Left(outOfBounds) => handleError(outOfBounds)
+            case Right(v)                     => handleArgument(option, v)
+            case Left(_) if option.hasDefault => handleDefault(option)
+            case Left(outOfBounds)            => handleError(outOfBounds)
           }
           // move index forward for gobbling
           if (option.tokensToRead(i, args) > 1) {

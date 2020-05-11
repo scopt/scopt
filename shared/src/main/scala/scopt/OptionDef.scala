@@ -30,6 +30,7 @@ class OptionDef[A: Read, C](
     _minOccurs: Int,
     _maxOccurs: Int,
     _isHidden: Boolean,
+    _defaultValue: Option[A],
     _fallback: Option[() => A],
     _defCallback: OptionDefCallback[C]) {
 
@@ -55,6 +56,7 @@ class OptionDef[A: Read, C](
       _minOccurs = 0,
       _maxOccurs = 1,
       _isHidden = false,
+      _defaultValue = None,
       _fallback = None,
       _defCallback = defCallback
     )
@@ -77,6 +79,7 @@ class OptionDef[A: Read, C](
       _minOccurs: Int = this._minOccurs,
       _maxOccurs: Int = this._maxOccurs,
       _isHidden: Boolean = this._isHidden,
+      _defaultValue: Option[A] = this._defaultValue,
       _fallback: Option[() => A] = this._fallback,
       _defCallback: OptionDefCallback[C] = this._defCallback): OptionDef[A, C] =
     new OptionDef(
@@ -94,6 +97,7 @@ class OptionDef[A: Read, C](
       _minOccurs = _minOccurs,
       _maxOccurs = _maxOccurs,
       _isHidden = _isHidden,
+      _defaultValue = _defaultValue,
       _fallback = _fallback,
       _defCallback = _defCallback
     )
@@ -164,6 +168,10 @@ class OptionDef[A: Read, C](
   def validate(f: A => Either[String, Unit]) =
     fireChange(copy(_validations = _validations :+ f))
 
+  /** */
+  def withDefault(value: A): OptionDef[A, C] =
+    fireChange(copy(_defaultValue = Option(value)))
+
   /** provides a default to fallback to, e.g. for System.getenv */
   def withFallback(to: () => A): OptionDef[A, C] =
     fireChange(copy(_fallback = Option(to)))
@@ -189,6 +197,8 @@ class OptionDef[A: Read, C](
   private[scopt] def hasParent: Boolean = _parentId.isDefined
   private[scopt] def getParentId: Option[Int] = _parentId
   def isHidden: Boolean = _isHidden
+  def hasDefault: Boolean = _defaultValue.isDefined
+  def getDefault: A = _defaultValue.get
   def hasFallback: Boolean = _fallback.isDefined
   def getFallback: A = _fallback.get.apply
   private[scopt] def checks: CSeq[C => Either[String, Unit]] = _configValidations
@@ -212,6 +222,19 @@ class OptionDef[A: Read, C](
         case Left(xs) => Left(xs)
       }
     } catch applyArgumentExHandler(shortDescription.capitalize, arg)
+
+  // apply the option with the passed in value
+  private[scopt] def applyDefault(config: C, onOption: Option[C => C]): Either[CSeq[String], C] = {
+    val x = getDefault
+    Validation.validateValue(_validations)(x) match {
+      case Right(_) =>
+        onOption match {
+          case Some(f) => Right(f(config))
+          case _       => Right(action(x, config))
+        }
+      case Left(xs) => Left(xs)
+    }
+  }
 
   // number of tokens to read: 0 for no match, 2 for "--foo 1", 1 for "--foo:1"
   private[scopt] def shortOptTokens(arg: String): Int =
