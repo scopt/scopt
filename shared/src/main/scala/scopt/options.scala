@@ -531,9 +531,15 @@ abstract class OptionParser[C](programName: String) {
             i += option.tokensToRead(i, args) - 1
           } // if
         case None =>
+          def isShortOpt(arg: String): Boolean =
+            arg.startsWith("-") && (arg.length == 1 || ! {
+              val c = arg.charAt(1)
+              (c >= '0' && c <= '9') || c == '.'
+            })
+
           args(i) match {
             case arg if arg startsWith "--" => handleError("Unknown option " + arg)
-            case arg if arg startsWith "-"  =>
+            case arg if isShortOpt(arg) =>
               if (arg == "-") handleError("Unknown option " + arg)
               else handleShortOptions(arg drop 1)
             case arg if findCommand(arg).isDefined =>
