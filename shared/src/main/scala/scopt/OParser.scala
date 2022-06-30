@@ -225,15 +225,10 @@ class OParser[A, C](head: OptionDef[A, C], rest: List[OptionDef[_, C]]) {
 
   /** Adds a parser under this command. */
   def children(cs: OParser[_, C]*): OParser[A, C] = {
-    cs.toList match {
-      case List() => this
-      case List(c) =>
-        val childList = c.toList
-        val childListModified = c.toList map { _.parent(head) }
-        OParser(head, rest ::: childListModified)
-      case x :: xs =>
-        children(OParser.sequence(x, xs: _*))
-    }
+    val options = cs.toList.flatMap(_.toList)
+    val (parent, noParent) = options.partition(_.hasParent)
+    val updatedChildList = parent ::: noParent.map(_.parent(head))
+    OParser(head, rest ::: updatedChildList)
   }
 
   /** Adds custom validation. */

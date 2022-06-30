@@ -6,3 +6,6 @@ lib_managed
 .idea/
 
 *~
+
+# sbt temp file
+/.bsp/
