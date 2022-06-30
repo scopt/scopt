@@ -226,8 +226,8 @@ class OParser[A, C](head: OptionDef[A, C], rest: List[OptionDef[_, C]]) {
   /** Adds a parser under this command. */
   def children(cs: OParser[_, C]*): OParser[A, C] = {
     val options = cs.toList.flatMap(_.toList)
-    val (parent, noParent) = options.partition(_.hasParent)
-    val updatedChildList = parent ::: noParent.map(_.parent(head))
+    val (withParent, withoutParent) = options.partition(_.hasParent)
+    val updatedChildList = withParent ::: withoutParent.map(_.parent(head))
     OParser(head, rest ::: updatedChildList)
   }
 
