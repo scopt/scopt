@@ -137,6 +137,58 @@ object ImmutableParserSpec extends verify.BasicTestSuite {
   test("seq parser should parse Seq(1, 2, 3)") {
     seqParser("--foo", "1,2,3")
     seqParser("--foo=1,2,3")
+    seqParser("--foo", "1", "2", "3")
+    seqParserFail("--foo")
+  }
+
+  test("seq parser should parse negative values") {
+    seqParserExpected(Seq(-1, -2, -3), "--foo", "-1", "-2", "-3")
+  }
+
+  test("seq parser should parse negative values with comma separator") {
+    seqParserExpected(Seq(-1, -2, -3), "--foo", "-1,-2,-3")
+  }
+
+  test("seq parser should stop at next option") {
+    val result =
+      seqParserWithOption1.parse(
+        Seq("--foo", "1", "2", "3", "--bar", "4"),
+        Config()
+      )
+    assert(result.get.seqInts == Seq(1, 2, 3))
+    assert(result.get.intValue == 4)
+  }
+
+  test("seq parser should parse Seq(1, 2, 3) with short option") {
+    seqParser("-f", "1", "2", "3")
+  }
+
+  test("seq parser should parse a single value") {
+    seqParserExpected(Seq(42), "--foo", "42")
+    seqParserExpected(Seq(42), "-f", "42")
+    seqParserExpected(Seq(42), "--foo=42")
+  }
+
+  test("seq parser should stop at -- separator") {
+    val result =
+      seqParserWithOption1.parse(
+        Seq("--foo", "1", "2", "--"),
+        Config()
+      )
+    assert(result.get.seqInts == Seq(1, 2))
+  }
+
+  test("seq parser should handle mixed comma and space separators") {
+    seqParserExpected(Seq(1, 2, 3, 4), "--foo", "1,2", "3", "4")
+    seqParserExpected(Seq(1, 2, 3), "--foo", "1", "2,3")
+  }
+
+  test("seq parser should parse Seq[String]") {
+    val result = seqStringParser1.parse(Seq("--foo", "a", "b", "c"), Config())
+    assert(result.get.seqStrings == Seq("a", "b", "c"))
+  }
+
+  test("seq parser should fail when no value is provided") {
     seqParserFail("--foo")
   }
 
@@ -569,7 +621,7 @@ Usage: scopt [options]
 
   val seqParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
-    opt[Seq[Int]]("foo").action({ case (s, c) =>
+    opt[Seq[Int]]('f', "foo").action({ case (s, c) =>
       c.copy(seqInts = s)
     })
     help("help")
@@ -578,9 +630,31 @@ Usage: scopt [options]
     val result = seqParser1.parse(args.toSeq, Config())
     assert(result.get.seqInts == Seq(1, 2, 3))
   }
+  def seqParserExpected(expected: Seq[Int], args: String*): Unit = {
+    val result = seqParser1.parse(args.toSeq, Config())
+    assert(result.get.seqInts == expected)
+  }
+  val seqParserWithOption1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[Seq[Int]]('f', "foo").action({ case (s, c) =>
+      c.copy(seqInts = s)
+    })
+    opt[Int]("bar").action({ case (i, c) =>
+      c.copy(intValue = i)
+    })
+    help("help")
+  }
   def seqParserFail(args: String*): Unit = {
     val result = seqParser1.parse(args.toSeq, Config())
     assert(result == None)
+  }
+
+  val seqStringParser1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[Seq[String]]("foo").action({ case (s, c) =>
+      c.copy(seqStrings = s)
+    })
+    help("help")
   }
 
   val mapParser1 = new scopt.OptionParser[Config]("scopt") {
@@ -1005,6 +1079,7 @@ Usage: scopt [options]
       a: String = "",
       b: String = "",
       seqInts: Seq[Int] = Seq(),
+      seqStrings: Seq[String] = Seq(),
       mapStringToBool: Map[String, Boolean] = Map(),
       seqTupleStringString: Seq[(String, String)] = Nil,
       charValue: Char = 0,

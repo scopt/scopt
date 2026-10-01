@@ -232,6 +232,24 @@ class OptionDef[A: Read, C](
       }
     } catch applyArgumentExHandler(shortDescription.capitalize, x.toString)
 
+  // apply the option with multiple tokens collected for a variadic Read
+  private[scopt] def applyVariadic(
+      tokens: CSeq[String],
+      config: C,
+      onOption: Option[C => C]
+  ): Either[CSeq[String], C] =
+    try {
+      val x = read.readsMany(tokens)
+      Validation.validateValue(_validations)(x) match {
+        case Right(_) =>
+          onOption match {
+            case Some(f) => Right(f(config))
+            case _       => Right(action(x, config))
+          }
+        case Left(xs) => Left(xs)
+      }
+    } catch applyArgumentExHandler(shortDescription.capitalize, tokens.mkString(" "))
+
   // number of tokens to read: 0 for no match, 2 for "--foo 1", 1 for "--foo:1"
   private[scopt] def shortOptTokens(arg: String): Int =
     _shortOpt match {

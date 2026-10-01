@@ -290,6 +290,21 @@ private[scopt] object ORunner {
           xs foreach reportError
       }
     }
+    def handleVariadicArgument(opt: OptionDef[_, C], tokens: CSeq[String]): Unit = {
+      val runnerAction = opt.kind match {
+        case OptHelp    => Some(helpAction)
+        case OptVersion => Some(versionAction)
+        case _          => None
+      }
+      opt.applyVariadic(tokens, _config, runnerAction) match {
+        case Right(c) =>
+          _config = c
+          pushChildren(opt)
+        case Left(xs) =>
+          _error = true
+          xs foreach reportError
+      }
+    }
     def handleFallback[A](opt: OptionDef[A, C], arg: A): Unit = {
       // version and help are dependent on runner results, so the actions are provided here
       val runnerAction = opt.kind match {
@@ -321,6 +336,14 @@ private[scopt] object ORunner {
     }
     def findCommand(cmd: String): Option[OptionDef[_, C]] =
       pendingCommands find { _.name == cmd }
+    def variadicTokensToRead(i: Int): Int = {
+      def isStop(j: Int): Boolean =
+        j >= args.length ||
+          pendingOptions.exists(_.tokensToRead(j, args) > 0) ||
+          pendingCommands.exists(_.name == args(j)) ||
+          args(j) == "--"
+      Iterator.from(i + 1).takeWhile(j => !isStop(j)).length
+    }
     // greedy match
     def handleShortOptions(g0: String): Unit = {
       val gs = (0 to g0.size - 1).toSeq map { n =>
@@ -374,14 +397,27 @@ private[scopt] object ORunner {
         } match {
           case Some(option) if processOptions =>
             handleOccurrence(option, pendingOptions)
-            option(i, args) match {
-              case Right(v)          => handleArgument(option, v)
-              case Left(outOfBounds) => handleError(outOfBounds)
+
+            if (option.read.isVariadic && option.tokensToRead(i, args) == 2) {
+              val n = variadicTokensToRead(i)
+              if (n == 0) {
+                handleError("Missing value after " + args(i))
+              } else {
+                val tokens = args.slice(i + 1, i + 1 + n)
+                handleVariadicArgument(option, tokens)
+                i += n
+              }
+            } else {
+              option(i, args) match {
+                case Right(v)          => handleArgument(option, v)
+                case Left(outOfBounds) => handleError(outOfBounds)
+              }
+
+              // move index forward for gobbling
+              if (option.tokensToRead(i, args) > 1) {
+                i += option.tokensToRead(i, args) - 1
+              }
             }
-            // move index forward for gobbling
-            if (option.tokensToRead(i, args) > 1) {
-              i += option.tokensToRead(i, args) - 1
-            } // if
           case _ =>
             def isShortOpt(arg: String): Boolean =
               arg.startsWith("-") && arg.length > 1 && arg(1) != '-'

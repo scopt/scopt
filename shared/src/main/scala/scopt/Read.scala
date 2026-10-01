@@ -6,10 +6,19 @@ import scala.collection.immutable.{ Seq => ISeq }
 
 trait Read[A] { self =>
   def arity: Int
+  def isVariadic: Boolean = false
   def tokensToRead: Int = if (arity == 0) 0 else 1
   def reads: String => A
+
+  /** Reads multiple tokens into a single value (as in `--foo 1 2 3`)
+   * @param tokens joins the tokens with `Read.sep` and delegates to [[reads]].
+   */
+  def readsMany(tokens: CSeq[String]): A = reads(tokens.mkString(Read.sep))
+
   def map[B](f: A => B): Read[B] = new Read[B] {
     val arity = self.arity
+    override val isVariadic = self.isVariadic
+    override def readsMany(tokens: CSeq[String]): B = f(self.readsMany(tokens))
     val reads = self.reads andThen f
   }
 }
@@ -107,12 +116,19 @@ object Read extends platform.PlatformReadInstances {
   val sep = ","
 
   // reads("1,2,3,4,5") == Seq(1,2,3,4,5)
-  implicit def seqRead[A: Read]: Read[CSeq[A]] = reads { (s: String) =>
-    s.split(sep).toList.map(implicitly[Read[A]].reads)
+  implicit def seqRead[A: Read]: Read[CSeq[A]] = new Read[CSeq[A]] {
+    override val arity: Int = 1
+    override val isVariadic: Boolean = true
+    override val reads: String => CSeq[A] =
+      (s: String) => s.split(sep).toList.map(implicitly[Read[A]].reads)
   }
+
   // reads("1,2,3,4,5") == List(1,2,3,4,5)
-  implicit def immutableSeqRead[A: Read]: Read[ISeq[A]] = reads { (s: String) =>
-    s.split(sep).toList.map(implicitly[Read[A]].reads)
+  implicit def immutableSeqRead[A: Read]: Read[ISeq[A]] = new Read[ISeq[A]] {
+    override val arity: Int = 1
+    override val isVariadic: Boolean = true
+    override val reads: String => ISeq[A] =
+      (s: String) => s.split(sep).toList.map(implicitly[Read[A]].reads)
   }
 
   // reads("1=false,2=true") == Map(1 -> false, 2 -> true)
