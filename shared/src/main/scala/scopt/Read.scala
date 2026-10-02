@@ -10,8 +10,9 @@ trait Read[A] { self =>
   def tokensToRead: Int = if (arity == 0) 0 else 1
   def reads: String => A
 
-  /** Reads multiple tokens into a single value (as in `--foo 1 2 3`)
-   * @param tokens joins the tokens with `Read.sep` and delegates to [[reads]].
+  /** Reads multiple tokens into a single value (as in `--foo 1 2 3`).
+   *
+   * The default implementation joins the tokens with `Read.sep` and delegates to [[reads]].
    */
   def readsMany(tokens: CSeq[String]): A = reads(tokens.mkString(Read.sep))
 
@@ -22,6 +23,13 @@ trait Read[A] { self =>
     val reads = self.reads andThen f
   }
 }
+
+/** A space-separated list of values, as in `--foo 1 2 3`.
+ *
+ * Unlike `Seq`, which remains comma-separated (`--foo 1,2,3`), this newtype
+ * opts into consuming consecutive tokens until the next option, command, or `--`.
+ */
+final case class SpaceSep[A](list: List[A])
 
 object Read extends platform.PlatformReadInstances {
 
@@ -116,19 +124,22 @@ object Read extends platform.PlatformReadInstances {
   val sep = ","
 
   // reads("1,2,3,4,5") == Seq(1,2,3,4,5)
-  implicit def seqRead[A: Read]: Read[CSeq[A]] = new Read[CSeq[A]] {
-    override val arity: Int = 1
-    override val isVariadic: Boolean = true
-    override val reads: String => CSeq[A] =
-      (s: String) => s.split(sep).toList.map(implicitly[Read[A]].reads)
+  implicit def seqRead[A: Read]: Read[CSeq[A]] = reads { (s: String) =>
+    s.split(sep).toList.map(implicitly[Read[A]].reads)
+  }
+  // reads("1,2,3,4,5") == List(1,2,3,4,5)
+  implicit def immutableSeqRead[A: Read]: Read[ISeq[A]] = reads { (s: String) =>
+    s.split(sep).toList.map(implicitly[Read[A]].reads)
   }
 
-  // reads("1,2,3,4,5") == List(1,2,3,4,5)
-  implicit def immutableSeqRead[A: Read]: Read[ISeq[A]] = new Read[ISeq[A]] {
+  // readsMany(Seq("1", "2", "3")) == SpaceSep(List(1, 2, 3))
+  implicit def spaceSepRead[A: Read]: Read[SpaceSep[A]] = new Read[SpaceSep[A]] {
     override val arity: Int = 1
     override val isVariadic: Boolean = true
-    override val reads: String => ISeq[A] =
-      (s: String) => s.split(sep).toList.map(implicitly[Read[A]].reads)
+    override val reads: String => SpaceSep[A] =
+      (s: String) => SpaceSep(List(implicitly[Read[A]].reads(s)))
+    override def readsMany(tokens: CSeq[String]): SpaceSep[A] =
+      SpaceSep(tokens.iterator.map(implicitly[Read[A]].reads).toList)
   }
 
   // reads("1=false,2=true") == Map(1 -> false, 2 -> true)

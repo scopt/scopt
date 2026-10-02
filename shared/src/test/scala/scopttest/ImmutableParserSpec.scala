@@ -2,6 +2,7 @@ package scopttest
 
 import java.net.URI
 import scala.concurrent.duration._
+import scopt.SpaceSep
 import SpecUtil._
 
 object ImmutableParserSpec extends verify.BasicTestSuite {
@@ -137,59 +138,60 @@ object ImmutableParserSpec extends verify.BasicTestSuite {
   test("seq parser should parse Seq(1, 2, 3)") {
     seqParser("--foo", "1,2,3")
     seqParser("--foo=1,2,3")
-    seqParser("--foo", "1", "2", "3")
     seqParserFail("--foo")
   }
 
-  test("seq parser should parse negative values") {
-    seqParserExpected(Seq(-1, -2, -3), "--foo", "-1", "-2", "-3")
+  test("seq parser should not consume following space-separated tokens") {
+    seqParserFail("--foo", "1", "2", "3")
   }
 
-  test("seq parser should parse negative values with comma separator") {
-    seqParserExpected(Seq(-1, -2, -3), "--foo", "-1,-2,-3")
-  }
-
-  test("seq parser should stop at next option") {
+  test("seq parser with arguments should keep comma-separated semantics") {
     val result =
-      seqParserWithOption1.parse(
+      seqParserWithArg1.parse(Seq("--foo", "1,2,3", "hello"), Config())
+    assert(result.get.seqInts == Seq(1, 2, 3))
+    assert(result.get.stringValue == "hello")
+  }
+
+  test("space-separated parser should parse SpaceSep(1, 2, 3)") {
+    spaceSepParser("--foo", "1", "2", "3")
+    spaceSepParser("-f", "1", "2", "3")
+    spaceSepParserFail("--foo")
+    spaceSepParserFail("--foo=1,2,3")
+  }
+
+  test("space-separated parser should parse a single value") {
+    spaceSepParserExpected(SpaceSep(List(42)), "--foo", "42")
+    spaceSepParserExpected(SpaceSep(List(42)), "-f", "42")
+    spaceSepParserExpected(SpaceSep(List(42)), "--foo=42")
+  }
+
+  test("space-separated parser should parse negative values") {
+    spaceSepParserExpected(SpaceSep(List(-1, -2, -3)), "--foo", "-1", "-2", "-3")
+  }
+
+  test("space-separated parser should stop at next option") {
+    val result =
+      spaceSepParserWithOption1.parse(
         Seq("--foo", "1", "2", "3", "--bar", "4"),
         Config()
       )
-    assert(result.get.seqInts == Seq(1, 2, 3))
+    assert(result.get.spaceSepInts == SpaceSep(List(1, 2, 3)))
     assert(result.get.intValue == 4)
   }
 
-  test("seq parser should parse Seq(1, 2, 3) with short option") {
-    seqParser("-f", "1", "2", "3")
-  }
-
-  test("seq parser should parse a single value") {
-    seqParserExpected(Seq(42), "--foo", "42")
-    seqParserExpected(Seq(42), "-f", "42")
-    seqParserExpected(Seq(42), "--foo=42")
-  }
-
-  test("seq parser should stop at -- separator") {
+  test("space-separated parser should stop at -- separator") {
     val result =
-      seqParserWithOption1.parse(
-        Seq("--foo", "1", "2", "--"),
+      spaceSepParserWithArg1.parse(
+        Seq("--foo", "1", "2", "--", "hello"),
         Config()
       )
-    assert(result.get.seqInts == Seq(1, 2))
+    assert(result.get.spaceSepInts == SpaceSep(List(1, 2)))
+    assert(result.get.stringValue == "hello")
   }
 
-  test("seq parser should handle mixed comma and space separators") {
-    seqParserExpected(Seq(1, 2, 3, 4), "--foo", "1,2", "3", "4")
-    seqParserExpected(Seq(1, 2, 3), "--foo", "1", "2,3")
-  }
-
-  test("seq parser should parse Seq[String]") {
-    val result = seqStringParser1.parse(Seq("--foo", "a", "b", "c"), Config())
-    assert(result.get.seqStrings == Seq("a", "b", "c"))
-  }
-
-  test("seq parser should fail when no value is provided") {
-    seqParserFail("--foo")
+  test("space-separated parser should parse SpaceSep[String]") {
+    val result = spaceSepStringParser1.parse(Seq("--foo", "a", "b", "c"), Config())
+    assert(result.get.spaceSepStrings == SpaceSep(List("a", "b", "c")))
   }
 
   test("map parser should parse a map") {
@@ -621,7 +623,7 @@ Usage: scopt [options]
 
   val seqParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
-    opt[Seq[Int]]('f', "foo").action({ case (s, c) =>
+    opt[Seq[Int]]("foo").action({ case (s, c) =>
       c.copy(seqInts = s)
     })
     help("help")
@@ -630,29 +632,68 @@ Usage: scopt [options]
     val result = seqParser1.parse(args.toSeq, Config())
     assert(result.get.seqInts == Seq(1, 2, 3))
   }
-  def seqParserExpected(expected: Seq[Int], args: String*): Unit = {
+  def seqParserFail(args: String*): Unit = {
     val result = seqParser1.parse(args.toSeq, Config())
-    assert(result.get.seqInts == expected)
+    assert(result == None)
   }
-  val seqParserWithOption1 = new scopt.OptionParser[Config]("scopt") {
+  val seqParserWithArg1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
-    opt[Seq[Int]]('f', "foo").action({ case (s, c) =>
+    opt[Seq[Int]]("foo").action({ case (s, c) =>
       c.copy(seqInts = s)
+    })
+    arg[String]("<file>")
+      .optional()
+      .action({ case (x, c) =>
+        c.copy(stringValue = x)
+      })
+    help("help")
+  }
+  val spaceSepParser1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[SpaceSep[Int]]('f', "foo").action({ case (s, c) =>
+      c.copy(spaceSepInts = s)
+    })
+    help("help")
+  }
+  def spaceSepParser(args: String*): Unit = {
+    val result = spaceSepParser1.parse(args.toSeq, Config())
+    assert(result.get.spaceSepInts == SpaceSep(List(1, 2, 3)))
+  }
+  def spaceSepParserExpected(expected: SpaceSep[Int], args: String*): Unit = {
+    val result = spaceSepParser1.parse(args.toSeq, Config())
+    assert(result.get.spaceSepInts == expected)
+  }
+  def spaceSepParserFail(args: String*): Unit = {
+    val result = spaceSepParser1.parse(args.toSeq, Config())
+    assert(result == None)
+  }
+  val spaceSepParserWithOption1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[SpaceSep[Int]]('f', "foo").action({ case (s, c) =>
+      c.copy(spaceSepInts = s)
     })
     opt[Int]("bar").action({ case (i, c) =>
       c.copy(intValue = i)
     })
     help("help")
   }
-  def seqParserFail(args: String*): Unit = {
-    val result = seqParser1.parse(args.toSeq, Config())
-    assert(result == None)
+  val spaceSepParserWithArg1 = new scopt.OptionParser[Config]("scopt") {
+    head("scopt", "3.x")
+    opt[SpaceSep[Int]]("foo").action({ case (s, c) =>
+      c.copy(spaceSepInts = s)
+    })
+    arg[String]("<file>")
+      .optional()
+      .action({ case (x, c) =>
+        c.copy(stringValue = x)
+      })
+    help("help")
   }
 
-  val seqStringParser1 = new scopt.OptionParser[Config]("scopt") {
+  val spaceSepStringParser1 = new scopt.OptionParser[Config]("scopt") {
     head("scopt", "3.x")
-    opt[Seq[String]]("foo").action({ case (s, c) =>
-      c.copy(seqStrings = s)
+    opt[SpaceSep[String]]("foo").action({ case (s, c) =>
+      c.copy(spaceSepStrings = s)
     })
     help("help")
   }
@@ -1079,7 +1120,8 @@ Usage: scopt [options]
       a: String = "",
       b: String = "",
       seqInts: Seq[Int] = Seq(),
-      seqStrings: Seq[String] = Seq(),
+      spaceSepInts: SpaceSep[Int] = SpaceSep(Nil),
+      spaceSepStrings: SpaceSep[String] = SpaceSep(Nil),
       mapStringToBool: Map[String, Boolean] = Map(),
       seqTupleStringString: Seq[(String, String)] = Nil,
       charValue: Char = 0,
