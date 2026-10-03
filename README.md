@@ -220,6 +220,7 @@ Command line options are defined using `opt[A]('f', "foo")` or `opt[A]("foo")` w
 - `scala.concurrent.duration.Duration` accepts a value like `--foo 30s`
 - A pair of types like `(String, Int)` accept a key-value like `--foo:k=1` or `-f k=1`
 - A `Seq[File]` accepts a string containing comma-separated values such as `--jars foo.jar,bar.jar`
+- A `SpaceSep[File]` accepts consecutive space-separated values such as `--jars foo.jar bar.jar`. Parsing stops at the next option, command, or `--`. If the parser also has positional `arg`s, separate them with `--` (for example `--jars foo.jar bar.jar -- file.txt`)
 - A `Map[String, String]` accepts a string containing comma-separated pairs like `--kwargs key1=val1,key2=val2`
 
 This could be extended by defining `Read` instances in the scope. For example,

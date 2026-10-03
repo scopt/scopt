@@ -6,13 +6,30 @@ import scala.collection.immutable.{ Seq => ISeq }
 
 trait Read[A] { self =>
   def arity: Int
+  def isVariadic: Boolean = false
   def tokensToRead: Int = if (arity == 0) 0 else 1
   def reads: String => A
+
+  /** Reads multiple tokens into a single value (as in `--foo 1 2 3`).
+   *
+   * The default implementation joins the tokens with `Read.sep` and delegates to [[reads]].
+   */
+  def readsMany(tokens: CSeq[String]): A = reads(tokens.mkString(Read.sep))
+
   def map[B](f: A => B): Read[B] = new Read[B] {
     val arity = self.arity
+    override val isVariadic = self.isVariadic
+    override def readsMany(tokens: CSeq[String]): B = f(self.readsMany(tokens))
     val reads = self.reads andThen f
   }
 }
+
+/** A space-separated list of values, as in `--foo 1 2 3`.
+ *
+ * Unlike `Seq`, which remains comma-separated (`--foo 1,2,3`), this newtype
+ * opts into consuming consecutive tokens until the next option, command, or `--`.
+ */
+final case class SpaceSep[A](list: List[A])
 
 object Read extends platform.PlatformReadInstances {
 
@@ -113,6 +130,16 @@ object Read extends platform.PlatformReadInstances {
   // reads("1,2,3,4,5") == List(1,2,3,4,5)
   implicit def immutableSeqRead[A: Read]: Read[ISeq[A]] = reads { (s: String) =>
     s.split(sep).toList.map(implicitly[Read[A]].reads)
+  }
+
+  // readsMany(Seq("1", "2", "3")) == SpaceSep(List(1, 2, 3))
+  implicit def spaceSepRead[A: Read]: Read[SpaceSep[A]] = new Read[SpaceSep[A]] {
+    override val arity: Int = 1
+    override val isVariadic: Boolean = true
+    override val reads: String => SpaceSep[A] =
+      (s: String) => SpaceSep(List(implicitly[Read[A]].reads(s)))
+    override def readsMany(tokens: CSeq[String]): SpaceSep[A] =
+      SpaceSep(tokens.iterator.map(implicitly[Read[A]].reads).toList)
   }
 
   // reads("1=false,2=true") == Map(1 -> false, 2 -> true)
