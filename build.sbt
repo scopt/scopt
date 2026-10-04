@@ -30,7 +30,23 @@ lazy val scopt = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     // to push, ghpages-push-site
     SiteScaladoc / siteSubdirName := s"$v/api",
     git.remoteRepo := "git@github.com:scopt/scopt.git",
-    scalacOptions ++= Seq("-language:existentials", "-deprecation", "-release:8"),
+    scalacOptions ++= Seq("-language:existentials", "-deprecation"),
+    scalacOptions ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) =>
+          Seq("-release:8")
+        case _ if scalaVersion.value.startsWith("3.3.") =>
+          Seq(
+            "-release:11"
+          ) ++ Option
+            .unless(platform.value.startsWith("native"))(
+              "-Yfuture-lazy-vals"
+            )
+            .toSeq
+        case _ =>
+          Nil
+      }
+    },
     scalacOptions ++= {
       scalaBinaryVersion.value match {
         case "3" =>
