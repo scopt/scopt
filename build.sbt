@@ -3,7 +3,7 @@ import Dependencies._
 def v: String = "4.1.1-SNAPSHOT"
 
 ThisBuild / version := v
-ThisBuild / scalaVersion := scala213
+ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala212, scala213, scala3)
 ThisBuild / scalafmtOnCompile := true
 ThisBuild / semanticdbEnabled := false
@@ -35,9 +35,9 @@ lazy val scopt = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, _)) =>
           Seq("-release:8")
-        case _ if scalaVersion.value.startsWith("3.3.") =>
+        case _ if scalaVersion.value.startsWith("3.") =>
           Seq(
-            "-release:11"
+            "-release:17"
           ) ++ Option
             .unless(platform.value.startsWith("native"))(
               "-Yfuture-lazy-vals"
