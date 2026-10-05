@@ -22,7 +22,7 @@ See the Maven Central badge above.
 | 2.13.x        | ✅  |   ✅     |      ✅         |
 | 2.12.x        | ✅  |   ✅     |      ✅         |
 
-scopt 4.2 and later require JDK 17 for Scala 3.x.
+scopt 4.2 and later require Scala 3.9+ and JDK 17 for Scala 3.x.
 
 Usage
 -----
