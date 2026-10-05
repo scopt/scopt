@@ -16,12 +16,13 @@ libraryDependencies += "com.github.scopt" %% "scopt" % "X.Y.Z"
 
 See the Maven Central badge above.
 
-| Scala Version | JVM | JS (1.x) |  JS (0.6.x) |  Native (0.4.x) |  Native (0.3.x) |
-| ------------- | :-: | :------: | :---------: | :------------:  | :------------:  |
-| 3.x           | ✅  |   ✅     |     n/a     |      ✅         |      n/a        |
-| 2.13.x        | ✅  |   ✅     |     ✅      |      ✅         |      n/a        |
-| 2.12.x        | ✅  |   ✅     |     ✅      |      ✅         |      n/a        |
-| 2.11.x        | ✅  |   ✅     |     ✅      |      ✅         |      ✅         |
+| Scala Version | JVM | JS (1.x) |  Native (0.4.x) |
+| ------------- | :-: | :------: | :------------:  |
+| 3.x           | ✅  |   ✅     |      ✅         |
+| 2.13.x        | ✅  |   ✅     |      ✅         |
+| 2.12.x        | ✅  |   ✅     |      ✅         |
+
+scopt 4.2 and later require JDK 17 for Scala 3.x.
 
 Usage
 -----
