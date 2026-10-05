@@ -1,6 +1,6 @@
 import Dependencies._
 
-def v: String = "4.1.1-SNAPSHOT"
+def v: String = "4.2.1-SNAPSHOT"
 
 ThisBuild / version := v
 ThisBuild / scalaVersion := scala3
