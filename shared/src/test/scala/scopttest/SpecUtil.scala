@@ -7,11 +7,10 @@ object SpecUtil {
   implicit class RichString(self: String) {
     def newline: String = self + envLineSeparator
     def newlines: String =
-      // Predef.augmentString = work around scala/bug#11125 on JDK 11
-      augmentString(self).lines.mkString(envLineSeparator)
+      self.linesIterator.mkString(envLineSeparator)
 
     def linesList: List[String] =
-      augmentString(self).lines.toList
+      self.linesIterator.toList
   }
 
   def printParserOut(thunk: => Unit): String = {
