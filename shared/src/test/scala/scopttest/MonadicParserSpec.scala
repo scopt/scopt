@@ -67,7 +67,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
       import builder._
       head("scopt", "4.x")
     }
-    val p: OParser[_, Config] = for {
+    val p: OParser[?, Config] = for {
       _ <- programName1
       _ <- head1
     } yield ()
@@ -124,7 +124,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
     trait ConfigLike1[R] {
       def withDebug(value: Boolean): R
     }
-    def parser1[R <: ConfigLike1[R]]: OParser[_, R] = {
+    def parser1[R <: ConfigLike1[R]]: OParser[?, R] = {
       val builder = OParser.builder[R]
       import builder._
       OParser.sequence(
@@ -136,7 +136,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
     trait ConfigLike2[R] {
       def withVerbose(value: Boolean): R
     }
-    def parser2[R <: ConfigLike2[R]]: OParser[_, R] = {
+    def parser2[R <: ConfigLike2[R]]: OParser[?, R] = {
       val builder = OParser.builder[R]
       import builder._
       OParser.sequence(
@@ -150,7 +150,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
       override def withDebug(value: Boolean) = copy(debug = value)
       override def withVerbose(value: Boolean) = copy(verbose = value)
     }
-    val parser3: OParser[_, Config1] = {
+    val parser3: OParser[?, Config1] = {
       val builder = OParser.builder[Config1]
       import builder._
       OParser.sequence(
@@ -171,7 +171,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
       import builder._
       opt[Unit]('b', "bob")
     }
-    val p: OParser[_, Config] = {
+    val p: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         head("scopt", "4.x"),
@@ -193,7 +193,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("unit parser should generate usage") {
     val builder = OParser.builder[Config]
-    val unitParser1: OParser[_, Config] = {
+    val unitParser1: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -213,7 +213,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("unit parser should parse ()") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -231,7 +231,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("options should generate usage text") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -255,7 +255,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("grouped parser should parse ()") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -275,7 +275,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("int parser should generate usage") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -297,7 +297,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("int parser should parse 1") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -332,7 +332,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("BigDecimal parser should generate usage") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -354,7 +354,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("BigDecimal parser should parse 1.0") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -379,7 +379,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("""opt[String]("foo").required() action { x => x }""" + " should fail to parse Nil") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -395,7 +395,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("custom validation") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -416,7 +416,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("command usage") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -446,7 +446,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("option parser can be reused across multiple commands") {
     val builder = OParser.builder[Config]
-    val suboptionParser1: OParser[_, Config] = {
+    val suboptionParser1: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         opt[Unit]("foo").action((x, c) => c.copy(stringValue = "foo")),
@@ -488,7 +488,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("--version should display header") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -512,7 +512,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("--help should display the usage text") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -543,7 +543,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
 
   test("empty children list should not throw exception") {
     val builder = OParser.builder[Config]
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),
@@ -558,7 +558,7 @@ object MonadicParserSpec extends verify.BasicTestSuite {
   test("showMultilineUsage") {
     val builder = OParser.builder[Config]
 
-    val parser: OParser[_, Config] = {
+    val parser: OParser[?, Config] = {
       import builder._
       OParser.sequence(
         programName("scopt"),

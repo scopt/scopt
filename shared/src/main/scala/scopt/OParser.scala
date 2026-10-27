@@ -224,7 +224,7 @@ class OParser[A, C](head: OptionDef[A, C], rest: List[OptionDef[_, C]]) {
     subHead[A](head.keyValueName(k, v))
 
   /** Adds a parser under this command. */
-  def children(cs: OParser[_, C]*): OParser[A, C] = {
+  def children(cs: OParser[?, C]*): OParser[A, C] = {
     val options = cs.toList.flatMap(_.toList)
     val (withParent, withoutParent) = options.partition(_.hasParent)
     val updatedChildList = withParent ::: withoutParent.map(_.parent(head))
@@ -240,14 +240,14 @@ class OParser[A, C](head: OptionDef[A, C], rest: List[OptionDef[_, C]]) {
     subHead[A](head.withFallback(to))
 
   def toList: List[OptionDef[_, C]] = head :: rest
-  def ++(other: OParser[_, C]): OParser[A, C] =
+  def ++(other: OParser[?, C]): OParser[A, C] =
     OParser(head, rest ::: other.toList)
 
   def foreach(f: Unit => Unit): Unit = f(())
 
   def map(f: Unit => Unit): OParser[A, C] = this
 
-  def flatMap(f: Unit => OParser[_, C]): OParser[A, C] =
+  def flatMap(f: Unit => OParser[?, C]): OParser[A, C] =
     OParser(head, rest ::: f(()).toList)
 
   protected def subHead[B](head: OptionDef[B, C]): OParser[B, C] =
@@ -260,14 +260,14 @@ object OParser {
 
   def builder[C]: OParserBuilder[C] = new OParserBuilder[C] {}
 
-  def usage[C](parser: OParser[_, C]): String = usage(parser, RenderingMode.TwoColumns)
+  def usage[C](parser: OParser[?, C]): String = usage(parser, RenderingMode.TwoColumns)
 
-  def usage[C](parser: OParser[_, C], mode: RenderingMode): String = {
+  def usage[C](parser: OParser[?, C], mode: RenderingMode): String = {
     val (h, u) = ORunner.renderUsage[C](mode, parser.toList)
     u
   }
 
-  def sequence[A, C](parser: OParser[A, C], parsers: OParser[_, C]*): OParser[A, C] =
+  def sequence[A, C](parser: OParser[A, C], parsers: OParser[?, C]*): OParser[A, C] =
     if (parsers.isEmpty) parser
     else
       parser flatMap { p =>
@@ -286,7 +286,7 @@ object OParser {
 
   /** Run the parser, and run the effects.
    */
-  def parse[C](parser: OParser[_, C], args: CSeq[String], init: C): Option[C] =
+  def parse[C](parser: OParser[?, C], args: CSeq[String], init: C): Option[C] =
     ORunner.runParser(args, init, parser.toList, psetup0) match {
       case (r, es) => ORunner.runEffects(es, esetup0); r
     }
@@ -294,7 +294,7 @@ object OParser {
   /** Run the parser, and run the effects.
    */
   def parse[C](
-      parser: OParser[_, C],
+      parser: OParser[?, C],
       args: CSeq[String],
       init: C,
       psetup: OParserSetup,
@@ -307,7 +307,7 @@ object OParser {
   /** Run the parser, and run the effects.
    */
   def parse[C](
-      parser: OParser[_, C],
+      parser: OParser[?, C],
       args: CSeq[String],
       init: C,
       psetup: OParserSetup
@@ -319,7 +319,7 @@ object OParser {
   /** Run the parser, and run the effects.
    */
   def parse[C](
-      parser: OParser[_, C],
+      parser: OParser[?, C],
       args: CSeq[String],
       init: C,
       esetup: OEffectSetup
@@ -330,13 +330,13 @@ object OParser {
 
   /** Run the parser, and return the result and the effects.
    */
-  def runParser[C](parser: OParser[_, C], args: CSeq[String], init: C): (Option[C], List[OEffect]) =
+  def runParser[C](parser: OParser[?, C], args: CSeq[String], init: C): (Option[C], List[OEffect]) =
     ORunner.runParser(args, init, parser.toList, psetup0)
 
   /** Run the parser, and return the result and the effects.
    */
   def runParser[C](
-      parser: OParser[_, C],
+      parser: OParser[?, C],
       args: CSeq[String],
       init: C,
       psetup: OParserSetup

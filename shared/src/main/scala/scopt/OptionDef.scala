@@ -172,11 +172,11 @@ class OptionDef[A: Read, C](
 
   private[scopt] def validateConfig(f: C => Either[String, Unit]) =
     fireChange(copy(_configValidations = _configValidations :+ f))
-  private[scopt] def parent(x: OptionDef[_, C]): OptionDef[A, C] =
+  private[scopt] def parent(x: OptionDef[?, C]): OptionDef[A, C] =
     fireChange(copy(_parentId = Some(x.id)))
 
   /** Adds opt/arg under this command. */
-  def children(xs: OptionDef[_, C]*): OptionDef[A, C] = {
+  def children(xs: OptionDef[?, C]*): OptionDef[A, C] = {
     xs foreach { _.parent(this) }
     this
   }

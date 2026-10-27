@@ -19,7 +19,7 @@ private[scopt] object ORunner {
     def commands: ISeq[OptionDef[_, C]] = options filter { _.kind == Cmd }
     def programNames: ISeq[OptionDef[_, C]] = options filter { _.kind == ProgramName }
     def programName: String = programNames.headOption match {
-      case Some(option: OptionDef[_, C]) => option.desc
+      case Some(option: OptionDef[?, C]) => option.desc
       case _                             => ""
     }
 
@@ -50,7 +50,7 @@ private[scopt] object ORunner {
       sorted.toList
     }
 
-    def itemUsage(value: OptionDef[_, C]): String = {
+    def itemUsage(value: OptionDef[?, C]): String = {
 
       def indentDescription(desc: String): String = desc.split(NL).mkString(NLTB)
 
@@ -80,7 +80,7 @@ private[scopt] object ORunner {
 
     lazy val header = (heads map { itemUsage }).mkString(NL)
 
-    def usageColumn1(value: OptionDef[_, C]): String =
+    def usageColumn1(value: OptionDef[?, C]): String =
       value.kind match {
         case ProgramName         => value.desc
         case Head | Note | Check => ""
@@ -104,7 +104,7 @@ private[scopt] object ORunner {
             value.fullName
       }
 
-    def usageTwoColumn(value: OptionDef[_, C], col1Length: Int): String = {
+    def usageTwoColumn(value: OptionDef[?, C], col1Length: Int): String = {
       def spaceToDesc(str: String, description: String) = {
         if (description.isEmpty) str
         else {
@@ -162,7 +162,7 @@ private[scopt] object ORunner {
     }
 
     def commandExample(cmd: Option[OptionDef[_, C]]): String = {
-      def commandName(cmd: OptionDef[_, C]): String =
+      def commandName(cmd: OptionDef[?, C]): String =
         (cmd.getParentId map { x =>
           (commands find { _.id == x } map { commandName } getOrElse { "" }) + " "
         } getOrElse { "" }) + cmd.name
@@ -232,7 +232,7 @@ private[scopt] object ORunner {
     def reportWarning(msg: String): Unit = effects.append(ReportWarning(msg))
     def terminate(exitState: Either[String, Unit]): Unit = effects.append(Terminate(exitState))
 
-    def pushChildren(opt: OptionDef[_, C]): Unit = {
+    def pushChildren(opt: OptionDef[?, C]): Unit = {
       // commands are cleared to guarantee that it appears first
       pendingCommands.clear()
 
@@ -274,7 +274,7 @@ private[scopt] object ORunner {
       terminate(Right(()))
       c
     }
-    def handleArgument(opt: OptionDef[_, C], arg: String): Unit = {
+    def handleArgument(opt: OptionDef[?, C], arg: String): Unit = {
       // version and help are dependent on runner results, so the actions are provided here
       val runnerAction = opt.kind match {
         case OptHelp    => Some(helpAction)
@@ -290,7 +290,7 @@ private[scopt] object ORunner {
           xs foreach reportError
       }
     }
-    def handleVariadicArgument(opt: OptionDef[_, C], tokens: CSeq[String]): Unit = {
+    def handleVariadicArgument(opt: OptionDef[?, C], tokens: CSeq[String]): Unit = {
       val runnerAction = opt.kind match {
         case OptHelp    => Some(helpAction)
         case OptVersion => Some(versionAction)
@@ -321,7 +321,7 @@ private[scopt] object ORunner {
           xs foreach reportError
       }
     }
-    def handleOccurrence(opt: OptionDef[_, C], pending: ListBuffer[OptionDef[_, C]]): Unit = {
+    def handleOccurrence(opt: OptionDef[?, C], pending: ListBuffer[OptionDef[_, C]]): Unit = {
 
       if (occurrences.contains(opt)) {
         val o = occurrences(opt) + 1
