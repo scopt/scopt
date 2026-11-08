@@ -24,6 +24,8 @@ See the Maven Central badge above.
 
 scopt 4.2 and later require Scala 3.9+ and JDK 17 for Scala 3.x.
 
+Scala.js uses LF for line breaks in help text, including on Windows.
+
 Usage
 -----
 
