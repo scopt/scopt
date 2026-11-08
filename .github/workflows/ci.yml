@@ -46,6 +46,9 @@ jobs:
       shell: bash
       run: |
         sbt -v "+scalafmtCheckAll ; scalafmtSbtCheck ; +scoptJS/test ; +scoptJVM/test"
+    - name: Test Scala.js without Node globals
+      if: ${{ matrix.jobtype == 1 && matrix.java == 17 }}
+      run: bash js/src/test/no-module/check.sh
     - name: Build and test (2)
       if: ${{ matrix.jobtype == 2 }}
       shell: bash
