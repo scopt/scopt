@@ -218,6 +218,7 @@ private[scopt] object ORunner {
     lazy val helpOptions: ISeq[OptionDef[_, C]] = options filter { _.kind == OptHelp }
 
     val pendingOptions = ListBuffer() ++ (nonArgs filterNot { _.hasParent })
+    val exhaustedOptions = ListBuffer[OptionDef[_, C]]()
     val pendingArgs = ListBuffer() ++ (arguments filterNot { _.hasParent })
     val pendingCommands = ListBuffer() ++ (commands filterNot { _.hasParent })
     var occurrences: Map[OptionDef[_, C], Int] = ListMap[OptionDef[_, C], Int]().withDefaultValue(0)
@@ -332,8 +333,21 @@ private[scopt] object ORunner {
 
       if (occurrences(opt) >= opt.getMaxOccurs) {
         pending -= opt
+        if (opt.isOptLike) {
+          exhaustedOptions -= opt
+          exhaustedOptions.insert(0, opt)
+        }
       }
     }
+    def handleUnknownOption(arg: String, exhausted: Option[OptionDef[_, C]]): Unit =
+      exhausted match {
+        case Some(option) =>
+          val times = if (option.getMaxOccurs == 1) " time" else " times"
+          handleError(
+            option.shortDescription.capitalize + " may only be given " + option.getMaxOccurs + times
+          )
+        case None => handleError("Unknown option " + arg)
+      }
     def findCommand(cmd: String): Option[OptionDef[_, C]] =
       pendingCommands find { _.name == cmd }
     def variadicTokensToRead(i: Int): Int = {
@@ -345,7 +359,7 @@ private[scopt] object ORunner {
       Iterator.from(i + 1).takeWhile(j => !isStop(j)).length
     }
     // greedy match
-    def handleShortOptions(g0: String): Unit = {
+    def handleShortOptions(g0: String, allowValueOption: Boolean = true): Unit = {
       val gs = (0 to g0.size - 1).toSeq map { n =>
         g0.substring(0, g0.size - n)
       }
@@ -359,9 +373,21 @@ private[scopt] object ORunner {
           handleOccurrence(option, pendingOptions)
           handleArgument(option, "")
           if (g0.drop(g.size) != "") {
-            handleShortOptions(g0 drop g.size)
+            handleShortOptions(g0 drop g.size, allowValueOption = false)
           }
-        case None => handleError("Unknown option " + "-" + g0)
+        case None =>
+          val exhausted = exhaustedOptions
+            .find { opt =>
+              val tokens = opt.shortOptTokens("-" + g0)
+              // A grouped remainder cannot consume a separate value token.
+              tokens == 1 || (allowValueOption && tokens > 0)
+            }
+            .orElse {
+              gs.flatMap { g => exhaustedOptions.map { (g, _) } }
+                .find { case (g, opt) => opt.shortOptTokens("-" + g) == 1 }
+                .map { _._2 }
+            }
+          handleUnknownOption("-" + g0, exhausted)
       }
     }
     def handleChecks(c: C): Unit = {
@@ -424,7 +450,7 @@ private[scopt] object ORunner {
 
             args(i) match {
               case arg if processOptions && arg.startsWith("--") =>
-                handleError("Unknown option " + arg)
+                handleUnknownOption(arg, exhaustedOptions.find(_.tokensToRead(i, args) > 0))
               case arg if processOptions && isShortOpt(arg) => handleShortOptions(arg drop 1)
               case arg if findCommand(arg).isDefined        =>
                 val cmd = findCommand(arg).get
